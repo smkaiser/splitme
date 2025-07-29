@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from 'sonner'
 import { Plus, Receipt, Users, Calculator, Download } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
@@ -38,6 +39,7 @@ function App() {
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
   const [showManageParticipants, setShowManageParticipants] = useState(false)
   const [activeTab, setActiveTab] = useState<'expenses' | 'settlements'>('expenses')
+  const [isExporting, setIsExporting] = useState(false)
 
   const settlements = calculateSettlements(expenses || [], participants || [])
   const totalExpenses = (expenses || []).reduce((sum, expense) => sum + expense.amount, 0)
@@ -45,6 +47,24 @@ function App() {
   const handleEditExpense = (expense: Expense) => {
     setExpenseToEdit(expense)
     setShowEditExpense(true)
+  }
+
+  const handleExportExpenses = async () => {
+    setIsExporting(true)
+    try {
+      exportExpensesToCSV(expenses || [], participants || [])
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportSettlements = async () => {
+    setIsExporting(true)
+    try {
+      exportSettlementsToCSV(settlements, participants || [])
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const handleUpdateExpense = (updatedExpense: Expense) => {
@@ -108,11 +128,12 @@ function App() {
           {(expenses || []).length > 0 && (
             <Button 
               variant="outline" 
-              onClick={() => exportExpensesToCSV(expenses || [], participants || [])}
+              onClick={handleExportExpenses}
+              disabled={isExporting}
               size="lg"
             >
               <Download className="w-5 h-5 mr-2" />
-              Export CSV
+              {isExporting ? 'Exporting...' : 'Export CSV'}
             </Button>
           )}
         </div>
@@ -141,11 +162,12 @@ function App() {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => exportSettlementsToCSV(settlements, participants || [])}
+              onClick={handleExportSettlements}
+              disabled={isExporting}
               className="ml-auto"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export Settlements
+              {isExporting ? 'Exporting...' : 'Export Settlements'}
             </Button>
           )}
         </div>
@@ -238,6 +260,7 @@ function App() {
         />
         </div>
       </div>
+      <Toaster position="top-center" />
     </TooltipProvider>
   )
 }
