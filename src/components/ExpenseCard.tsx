@@ -7,7 +7,7 @@ import { Expense, Participant } from '@/App'
 interface ExpenseCardProps {
   expense: Expense
   participants: Participant[]
-  onEdit: (id: string) => void
+  onEdit: () => void
   onDelete: (id: string) => void
 }
 
@@ -83,7 +83,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete }: Expense
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onEdit(expense.id)}
+                onClick={onEdit}
                 className="h-8 w-8 p-0"
               >
                 <Edit className="w-4 h-4" />

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Plus, Receipt, Users, Calculator, Trash2, Edit } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
+import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { SettlementCard } from '@/components/SettlementCard'
@@ -31,11 +32,26 @@ function App() {
   const [participants, setParticipants] = useKV<Participant[]>('participants', [])
   const [expenses, setExpenses] = useKV<Expense[]>('expenses', [])
   const [showAddExpense, setShowAddExpense] = useState(false)
+  const [showEditExpense, setShowEditExpense] = useState(false)
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
   const [showManageParticipants, setShowManageParticipants] = useState(false)
   const [activeTab, setActiveTab] = useState<'expenses' | 'settlements'>('expenses')
 
   const settlements = calculateSettlements(expenses, participants)
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+
+  const handleEditExpense = (expense: Expense) => {
+    setExpenseToEdit(expense)
+    setShowEditExpense(true)
+  }
+
+  const handleUpdateExpense = (updatedExpense: Expense) => {
+    setExpenses((current) => 
+      current.map(expense => 
+        expense.id === updatedExpense.id ? updatedExpense : expense
+      )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,9 +152,7 @@ function App() {
                     key={expense.id}
                     expense={expense}
                     participants={participants}
-                    onEdit={() => {
-                      // TODO: Implement edit functionality
-                    }}
+                    onEdit={() => handleEditExpense(expense)}
                     onDelete={(id) => {
                       setExpenses((current) => current.filter(e => e.id !== id))
                     }}
@@ -180,11 +194,21 @@ function App() {
           }}
         />
 
+        <EditExpenseDialog
+          open={showEditExpense}
+          onOpenChange={setShowEditExpense}
+          expense={expenseToEdit}
+          participants={participants}
+          onUpdateExpense={handleUpdateExpense}
+        />
+
         <ManageParticipantsDialog
           open={showManageParticipants}
           onOpenChange={setShowManageParticipants}
           participants={participants}
+          expenses={expenses}
           onUpdateParticipants={setParticipants}
+          onUpdateExpenses={setExpenses}
         />
       </div>
     </div>
