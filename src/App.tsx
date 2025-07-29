@@ -60,7 +60,7 @@ function App() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">TripSplit</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">SplitMe</h1>
           <p className="text-muted-foreground text-lg">Split expenses with friends, effortlessly</p>
         </div>
 
