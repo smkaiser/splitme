@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Plus, Receipt, Users, Calculator, Trash2, Edit } from '@phosphor-icons/react'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { Plus, Receipt, Users, Calculator } from 'lucide-react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
@@ -54,8 +55,9 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">TripSplit</h1>
@@ -211,7 +213,7 @@ function App() {
           onUpdateExpenses={setExpenses}
         />
       </div>
-    </div>
+    </TooltipProvider>
   )
 }
 

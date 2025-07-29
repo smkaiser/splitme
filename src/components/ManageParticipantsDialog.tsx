@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Plus, Trash2, Users, AlertTriangle } from '@phosphor-icons/react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Plus, Trash2, Users, AlertTriangle } from 'lucide-react'
 import { Participant, Expense } from '@/App'
 import {
   AlertDialog,
@@ -135,13 +136,20 @@ export function ManageParticipantsDialog({
                   }}
                   className={error ? 'border-destructive' : ''}
                 />
-                <Button 
-                  type="submit"
-                  size="sm"
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      type="submit"
+                      size="sm"
+                      className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add friend</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               {error && (
                 <p className="text-sm text-destructive">{error}</p>
@@ -184,14 +192,21 @@ export function ManageParticipantsDialog({
                               </div>
                             )}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveParticipant(participant)}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveParticipant(participant)}
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Remove friend</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       )
                     })}
