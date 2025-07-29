@@ -5,13 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { Plus, Receipt, Users, Calculator } from '@phosphor-icons/react'
+import { Plus, Receipt, Users, Calculator, Download } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { SettlementCard } from '@/components/SettlementCard'
 import { calculateSettlements } from '@/lib/settlements'
+import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
 
 export interface Participant {
   id: string
@@ -104,26 +105,51 @@ function App() {
             <Users className="w-5 h-5 mr-2" />
             Manage Friends
           </Button>
+          {(expenses || []).length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => exportExpensesToCSV(expenses || [], participants || [])}
+              size="lg"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              Export CSV
+            </Button>
+          )}
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6">
-          <Button
-            variant={activeTab === 'expenses' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('expenses')}
-            className="flex-1 md:flex-none"
-          >
-            <Receipt className="w-4 h-4 mr-2" />
-            Expenses
-          </Button>
-          <Button
-            variant={activeTab === 'settlements' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('settlements')}
-            className="flex-1 md:flex-none"
-          >
-            <Calculator className="w-4 h-4 mr-2" />
-            Settlements
-          </Button>
+        <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === 'expenses' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('expenses')}
+              className="flex-1 md:flex-none"
+            >
+              <Receipt className="w-4 h-4 mr-2" />
+              Expenses
+            </Button>
+            <Button
+              variant={activeTab === 'settlements' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('settlements')}
+              className="flex-1 md:flex-none"
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              Settlements
+            </Button>
+          </div>
+          
+          {/* Tab-specific export buttons */}
+          {activeTab === 'settlements' && settlements.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportSettlementsToCSV(settlements, participants || [])}
+              className="ml-auto"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export Settlements
+            </Button>
+          )}
         </div>
 
         {/* Content */}
