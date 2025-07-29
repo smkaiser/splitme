@@ -125,18 +125,16 @@ function App() {
             className="flex-1 md:flex-none"
           >
             <Receipt className="w-4 h-4 mr-2" />
-              <Receipt className="w-4 h-4 mr-2" />
-              Expenses
-            </Button>
-            <Button
-              variant={activeTab === 'settlements' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('settlements')}
-              className="flex-1 md:flex-none"
-            >
-              <Calculator className="w-4 h-4 mr-2" />
-              Settlements
-            </Button>
-          </div>
+            Expenses
+          </Button>
+          <Button
+            variant={activeTab === 'settlements' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('settlements')}
+            className="flex-1 md:flex-none"
+          >
+            <Calculator className="w-4 h-4 mr-2" />
+            Settlements
+          </Button>
           
           {/* Tab-specific export buttons */}
           {activeTab === 'settlements' && settlements.length > 0 && (
