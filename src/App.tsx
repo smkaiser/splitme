@@ -118,13 +118,13 @@ function App() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <div className="flex gap-2">
-            <Button
-              variant={activeTab === 'expenses' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('expenses')}
-              className="flex-1 md:flex-none"
-            >
+        <div className="flex gap-2 mb-6">
+          <Button
+            variant={activeTab === 'expenses' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('expenses')}
+            className="flex-1 md:flex-none"
+          >
+            <Receipt className="w-4 h-4 mr-2" />
               <Receipt className="w-4 h-4 mr-2" />
               Expenses
             </Button>
