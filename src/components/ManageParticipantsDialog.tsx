@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Plus, Trash2, Users, AlertTriangle } from 'lucide-react'
+import { Plus, Trash, Users, Warning } from '@phosphor-icons/react'
 import { Participant, Expense } from '@/App'
 import {
   AlertDialog,
@@ -200,7 +200,7 @@ export function ManageParticipantsDialog({
                                 onClick={() => handleRemoveParticipant(participant)}
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash className="w-4 h-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -228,7 +228,7 @@ export function ManageParticipantsDialog({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-destructive" />
+                <Warning className="w-5 h-5 text-destructive" />
                 Remove {participantToRemove?.name}?
               </AlertDialogTitle>
               <AlertDialogDescription className="space-y-2">

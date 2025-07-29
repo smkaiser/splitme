@@ -11,8 +11,8 @@ interface SettlementCardProps {
 export function SettlementCard({ settlement }: SettlementCardProps) {
   const [participants] = useKV<Participant[]>('participants', [])
   
-  const fromParticipant = participants.find(p => p.id === settlement.from)
-  const toParticipant = participants.find(p => p.id === settlement.to)
+  const fromParticipant = (participants || []).find(p => p.id === settlement.from)
+  const toParticipant = (participants || []).find(p => p.id === settlement.to)
 
   return (
     <Card className="bg-card/50 border-accent/20">

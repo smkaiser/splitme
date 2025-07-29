@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Edit, Trash2, MapPin, Calendar } from 'lucide-react'
+import { PencilSimple, Trash, MapPin, Calendar } from '@phosphor-icons/react'
 import { Expense, Participant } from '@/App'
 
 interface ExpenseCardProps {
@@ -89,7 +89,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete }: Expense
                     onClick={onEdit}
                     className="h-8 w-8 p-0"
                   >
-                    <Edit className="w-4 h-4" />
+                    <PencilSimple className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -104,7 +104,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete }: Expense
                     onClick={() => onDelete(expense.id)}
                     className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>

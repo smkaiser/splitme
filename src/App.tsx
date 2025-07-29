@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { Plus, Receipt, Users, Calculator } from 'lucide-react'
+import { Plus, Receipt, Users, Calculator } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
@@ -38,8 +38,8 @@ function App() {
   const [showManageParticipants, setShowManageParticipants] = useState(false)
   const [activeTab, setActiveTab] = useState<'expenses' | 'settlements'>('expenses')
 
-  const settlements = calculateSettlements(expenses, participants)
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const settlements = calculateSettlements(expenses || [], participants || [])
+  const totalExpenses = (expenses || []).reduce((sum, expense) => sum + expense.amount, 0)
 
   const handleEditExpense = (expense: Expense) => {
     setExpenseToEdit(expense)
@@ -48,7 +48,7 @@ function App() {
 
   const handleUpdateExpense = (updatedExpense: Expense) => {
     setExpenses((current) => 
-      current.map(expense => 
+      (current || []).map(expense => 
         expense.id === updatedExpense.id ? updatedExpense : expense
       )
     )
@@ -74,13 +74,13 @@ function App() {
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-primary">{expenses.length}</div>
+              <div className="text-2xl font-bold text-primary">{(expenses || []).length}</div>
               <p className="text-sm text-muted-foreground">Expenses Recorded</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-primary">{participants.length}</div>
+              <div className="text-2xl font-bold text-primary">{(participants || []).length}</div>
               <p className="text-sm text-muted-foreground">Trip Friends</p>
             </CardContent>
           </Card>
@@ -129,7 +129,7 @@ function App() {
         {/* Content */}
         {activeTab === 'expenses' && (
           <div className="space-y-4">
-            {expenses.length === 0 ? (
+            {(expenses || []).length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
                   <Receipt className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
@@ -147,16 +147,16 @@ function App() {
                 </CardContent>
               </Card>
             ) : (
-              expenses
+              (expenses || [])
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                 .map(expense => (
                   <ExpenseCard
                     key={expense.id}
                     expense={expense}
-                    participants={participants}
+                    participants={participants || []}
                     onEdit={() => handleEditExpense(expense)}
                     onDelete={(id) => {
-                      setExpenses((current) => current.filter(e => e.id !== id))
+                      setExpenses((current) => (current || []).filter(e => e.id !== id))
                     }}
                   />
                 ))
@@ -172,7 +172,7 @@ function App() {
                   <Calculator className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">All settled up!</h3>
                   <p className="text-muted-foreground">
-                    {expenses.length === 0 
+                    {(expenses || []).length === 0 
                       ? "Add some expenses to see settlement calculations"
                       : "Everyone's expenses are balanced"}
                   </p>
@@ -190,9 +190,9 @@ function App() {
         <AddExpenseDialog
           open={showAddExpense}
           onOpenChange={setShowAddExpense}
-          participants={participants}
+          participants={participants || []}
           onAddExpense={(expense) => {
-            setExpenses((current) => [...current, expense])
+            setExpenses((current) => [...(current || []), expense])
           }}
         />
 
@@ -200,18 +200,19 @@ function App() {
           open={showEditExpense}
           onOpenChange={setShowEditExpense}
           expense={expenseToEdit}
-          participants={participants}
+          participants={participants || []}
           onUpdateExpense={handleUpdateExpense}
         />
 
         <ManageParticipantsDialog
           open={showManageParticipants}
           onOpenChange={setShowManageParticipants}
-          participants={participants}
-          expenses={expenses}
+          participants={participants || []}
+          expenses={expenses || []}
           onUpdateParticipants={setParticipants}
           onUpdateExpenses={setExpenses}
         />
+        </div>
       </div>
     </TooltipProvider>
   )
