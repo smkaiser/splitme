@@ -82,6 +82,20 @@ Scripts added:
 - `dev:full` – run frontend + backend concurrently
 - `build:api` – compile Functions TypeScript
 
+### Node.js Version
+Azure Functions (and many managed environments) in this setup target **Node 18 LTS**. The project now includes:
+- `.nvmrc` with `18.20.3`
+- `"engines": { "node": ">=18 <19" }` in `package.json`
+
+Use:
+```bash
+nvm use
+```
+before installing dependencies locally. If deploying outside Static Web Apps (e.g. dedicated Function App), set the Function App setting:
+```bash
+az functionapp config set -g <rg> -n <func-app-name> --linux-fx-version "NODE|18-lts"
+```
+
 ### Environment Variables
 | Name | Purpose |
 |------|---------|
