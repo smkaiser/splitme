@@ -1,0 +1,13 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["patch"],
+      "route": "trips/{slug}/expenses/{expenseId}"
+    },
+    { "type": "http", "direction": "out", "name": "res" }
+  ]
+}
