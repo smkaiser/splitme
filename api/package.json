@@ -1,0 +1,22 @@
+{
+  "name": "splitme-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "func start",
+    "clean": "rimraf dist"
+  },
+  "engines": {
+    "node": ">=18 <19"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.0",
+    "@azure/functions": "^4.5.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2"
+  }
+}
