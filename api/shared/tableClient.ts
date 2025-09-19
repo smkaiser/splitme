@@ -1,0 +1,91 @@
+import { TableClient, AzureSASCredential, TableEntityResult, odata } from '@azure/data-tables'
+import { randomUUID } from 'crypto'
+
+const tableName = process.env.TABLE_NAME || 'TripsData'
+
+export function getConnectionString() {
+  const cs = process.env.TABLES_CONNECTION_STRING || process.env.AzureWebJobsStorage
+  if (!cs) throw new Error('Missing TABLES_CONNECTION_STRING/AzureWebJobsStorage')
+  return cs
+}
+
+export function getTableClient() {
+  const connectionString = getConnectionString()
+  return TableClient.fromConnectionString(connectionString, tableName, { allowInsecureConnection: true })
+}
+
+export interface TripMetaRow {
+  partitionKey: string // tripId
+  rowKey: string // 'meta'
+  type: 'trip'
+  name: string
+  slug: string
+  secretToken: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ParticipantRow {
+  partitionKey: string
+  rowKey: string // participant:{id}
+  type: 'participant'
+  participantId: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ExpenseRow {
+  partitionKey: string
+  rowKey: string // expense:{id}
+  type: 'expense'
+  expenseId: string
+  amount: number
+  date: string
+  place: string
+  description: string
+  paidBy: string
+  participantIds: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SlugIndexRow {
+  partitionKey: string // 'slug'
+  rowKey: string // slug
+  tripId: string
+}
+
+export function newId() { return randomUUID() }
+
+export function nowIso() { return new Date().toISOString() }
+
+export async function ensureTableExists(client: TableClient) {
+  try { await client.createTable() } catch (e: any) { if (e.statusCode !== 409) throw e }
+}
+
+export async function getTripIdBySlug(client: TableClient, slug: string): Promise<string | null> {
+  try {
+    const entity = await client.getEntity<SlugIndexRow>('slug', slug)
+    return (entity as any).tripId || null
+  } catch (e: any) {
+    if (e.statusCode === 404) return null
+    throw e
+  }
+}
+
+export async function listTripRows(client: TableClient, tripId: string) {
+  const rows: any[] = []
+  for await (const entity of client.listEntities({ queryOptions: { filter: odata`PartitionKey eq ${tripId}` } })) {
+    rows.push(entity)
+  }
+  return rows
+}
+
+export function requireWriteAuth(secretTokenFromRow: string, provided?: string) {
+  if (secretTokenFromRow && secretTokenFromRow !== provided) {
+    const err: any = new Error('Forbidden')
+    err.status = 403
+    throw err
+  }
+}
