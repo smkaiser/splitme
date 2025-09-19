@@ -86,8 +86,12 @@ Scripts added:
 | Name | Purpose |
 |------|---------|
 | `TABLES_CONNECTION_STRING` | Preferred explicit connection string for Azure Table Storage |
+| `STORAGE_CONNECTION` | Alternate name (used in Static Web Apps) supported by code fallback |
 | `AzureWebJobsStorage` | Fallback storage connection (Functions default) |
 | `TABLE_NAME` | Override table name (default `TripsData`) |
+
+### Static Web Apps Routing
+The file `staticwebapp.config.json` provides SPA routing so deep links like `/t/{slug}` work in production and ensures `/api/*` is left to Functions. If you customize routes, keep the catch-all rewrite to `index.html`.
 
 ### Security Notes
 - Secret token is returned only on trip creation; store it client-side (e.g., localStorage) to enable future mutations.

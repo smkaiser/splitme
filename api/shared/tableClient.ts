@@ -1,16 +1,20 @@
-import { TableClient, AzureSASCredential, TableEntityResult, odata } from '@azure/data-tables'
+import { TableClient, odata } from '@azure/data-tables'
 import { randomUUID } from 'crypto'
 
 const tableName = process.env.TABLE_NAME || 'TripsData'
 
 export function getConnectionString() {
-  const cs = process.env.TABLES_CONNECTION_STRING || process.env.AzureWebJobsStorage
-  if (!cs) throw new Error('Missing TABLES_CONNECTION_STRING/AzureWebJobsStorage')
+  const cs =
+    process.env.TABLES_CONNECTION_STRING ||
+    process.env.STORAGE_CONNECTION || // added to support Static Web Apps custom setting
+    process.env.AzureWebJobsStorage
+  if (!cs) throw new Error('Missing TABLES_CONNECTION_STRING/STORAGE_CONNECTION/AzureWebJobsStorage')
   return cs
 }
 
 export function getTableClient() {
   const connectionString = getConnectionString()
+  // allowInsecureConnection is mainly helpful when using Azurite locally
   return TableClient.fromConnectionString(connectionString, tableName, { allowInsecureConnection: true })
 }
 
