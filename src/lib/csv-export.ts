@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 export interface CSVExportOptions {
   includeSettlements?: boolean
+  tripSlug?: string
 }
 
 export function exportExpensesToCSV(
@@ -59,7 +60,8 @@ export function exportExpensesToCSV(
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     
-    const filename = `splitme-expenses-${new Date().toISOString().split('T')[0]}.csv`
+  const date = new Date().toISOString().split('T')[0]
+  const filename = options.tripSlug ? `splitme-${options.tripSlug}-expenses-${date}.csv` : `splitme-expenses-${date}.csv`
     console.log('Creating download with filename:', filename)
     
     link.setAttribute('href', url)
@@ -81,7 +83,8 @@ export function exportExpensesToCSV(
 
 export function exportSettlementsToCSV(
   settlements: Array<{ from: string; to: string; amount: number }>,
-  participants: Participant[]
+  participants: Participant[],
+  options: { tripSlug?: string } = {}
 ): void {
   try {
     console.log('Starting settlements CSV export...', { settlementCount: settlements.length })
@@ -105,7 +108,8 @@ export function exportSettlementsToCSV(
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     
-    const filename = `splitme-settlements-${new Date().toISOString().split('T')[0]}.csv`
+  const date = new Date().toISOString().split('T')[0]
+  const filename = options.tripSlug ? `splitme-${options.tripSlug}-settlements-${date}.csv` : `splitme-settlements-${date}.csv`
     console.log('Creating settlements download with filename:', filename)
     
     link.setAttribute('href', url)

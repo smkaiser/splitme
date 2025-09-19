@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { ArrowRight } from '@phosphor-icons/react'
 import { Settlement } from '@/lib/settlements'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Participant } from '@/App'
 
 interface SettlementCardProps {

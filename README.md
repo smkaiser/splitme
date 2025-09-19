@@ -12,6 +12,36 @@ This template is your blank canvas. It comes with a minimal setup to help you ge
 
 Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
 
+## Multi-Trip Expense Splitter Enhancement
+
+This project has been extended to support multiple independent trips, each with isolated participants and expenses.
+
+### How it Works
+
+- Root path `/` shows the Trips Admin where you can create and delete trips.
+- Each trip gets a unique slug and is accessible at `/t/{slug}`.
+- Data is stored in `localStorage` namespaced by trip slug:
+	- `participants:{slug}`
+	- `expenses:{slug}`
+	- Trip list itself stored under `trips`.
+- CSV export filenames now include the trip slug.
+
+### Adding a Trip
+1. Go to `/` (root).
+2. Enter a trip name (e.g., `Italy 2025`).
+3. Click Add Trip. A unique slug is generated automatically.
+4. Click Open to manage expenses for that trip.
+
+### Deleting a Trip
+Deleting a trip will remove the trip entry and its associated participant/expense keys from `localStorage` (cannot be undone).
+
+### Future Ideas
+- Shareable read-only link mode
+- Authentication & cloud sync
+- Unequal split weights
+
+---
+
 🧹 Just Exploring?
 No problem! If you were just checking things out and don’t need to keep this code:
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from './hooks/useKV'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -31,9 +31,14 @@ export interface Expense {
   createdAt: string
 }
 
-function App() {
-  const [participants, setParticipants] = useKV<Participant[]>('participants', [])
-  const [expenses, setExpenses] = useKV<Expense[]>('expenses', [])
+interface AppProps { tripSlug: string; tripName?: string }
+
+function App({ tripSlug, tripName }: AppProps) {
+  // Namespace keys by trip slug so each trip has isolated data
+  const participantsKey = `participants:${tripSlug}`
+  const expensesKey = `expenses:${tripSlug}`
+  const [participants, setParticipants] = useKV<Participant[]>(participantsKey, [])
+  const [expenses, setExpenses] = useKV<Expense[]>(expensesKey, [])
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [showEditExpense, setShowEditExpense] = useState(false)
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
@@ -52,7 +57,7 @@ function App() {
   const handleExportExpenses = async () => {
     setIsExporting(true)
     try {
-      exportExpensesToCSV(expenses || [], participants || [])
+  exportExpensesToCSV(expenses || [], participants || [], { tripSlug })
     } finally {
       setIsExporting(false)
     }
@@ -61,7 +66,7 @@ function App() {
   const handleExportSettlements = async () => {
     setIsExporting(true)
     try {
-      exportSettlementsToCSV(settlements, participants || [])
+  exportSettlementsToCSV(settlements, participants || [], { tripSlug })
     } finally {
       setIsExporting(false)
     }
@@ -81,8 +86,8 @@ function App() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">SplitMe</h1>
-          <p className="text-muted-foreground text-lg">Split expenses with friends, effortlessly</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{tripName || 'Trip'} • SplitMe</h1>
+          <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <button className="underline hover:no-underline" onClick={() => { window.location.href='/' }}>All Trips</button></p>
         </div>
 
         {/* Quick Stats */}
