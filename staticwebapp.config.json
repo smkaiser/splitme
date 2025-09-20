@@ -3,6 +3,8 @@
     { "route": "/api/*", "allowedRoles": ["anonymous"] },
     { "route": "/t/*", "rewrite": "/index.html" },
     { "route": "/", "rewrite": "/index.html" },
+    { "route": "/assets/*", "allowedRoles": ["anonymous"] },
+    { "route": "/*.{js,css,ico,png,svg,webp,txt,json,wasm}", "allowedRoles": ["anonymous"] },
     { "route": "/*", "rewrite": "/index.html" }
   ],
   "responseOverrides": {
