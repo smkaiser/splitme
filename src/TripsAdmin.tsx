@@ -15,27 +15,62 @@ function slugify(name: string) {
     .replace(/^-+|-+$/g, '')
 }
 
+interface TripSecret { slug: string; secretToken: string }
+
 export function TripsAdmin() {
   const [trips, setTrips] = useKV<Trip[]>('trips', [])
+  const [tripSecrets, setTripSecrets] = useKV<TripSecret[]>('tripSecrets', [])
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const apiBase = '/api'
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const trimmed = name.trim()
     if (!trimmed) {
       setError('Trip name required')
       return
     }
+    setCreating(true)
     const slugBase = slugify(trimmed)
     let slug = slugBase
     let i = 1
     while ((trips || []).some(t => t.slug === slug)) {
       slug = `${slugBase}-${i++}`
     }
-    const newTrip: Trip = { id: uuidv4(), name: trimmed, slug, createdAt: new Date().toISOString() }
-    setTrips([...(trips || []), newTrip])
-    setName('')
-    setError(null)
+    try {
+      // Attempt remote creation first
+      const res = await fetch(`${apiBase}/trips`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed, slug })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const newTrip: Trip = { id: data.tripId, name: data.name, slug: data.slug, createdAt: data.createdAt }
+        setTrips([...(trips || []), newTrip])
+        if (data.secretToken) {
+          setTripSecrets(prev => {
+            const without = (prev || []).filter(s => s.slug !== data.slug)
+            return [...without, { slug: data.slug, secretToken: data.secretToken }]
+          })
+        }
+        setError(null)
+      } else {
+        // Fallback to local-only if backend returns non-OK
+        const newTrip: Trip = { id: uuidv4(), name: trimmed, slug, createdAt: new Date().toISOString() }
+        setTrips([...(trips || []), newTrip])
+        setError('Created locally (remote failed)')
+      }
+      setName('')
+    } catch (e: any) {
+      // Network / unexpected error fallback
+      const newTrip: Trip = { id: uuidv4(), name: trimmed, slug, createdAt: new Date().toISOString() }
+      setTrips([...(trips || []), newTrip])
+      setError('Created locally (offline)')
+    } finally {
+      setCreating(false)
+    }
   }
 
   const handleDelete = (trip: Trip) => {
@@ -70,9 +105,9 @@ export function TripsAdmin() {
                 onChange={e => setName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
               />
-              <Button onClick={handleAdd} className="md:w-auto">
+              <Button onClick={handleAdd} className="md:w-auto" disabled={creating}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Trip
+                {creating ? 'Creating...' : 'Add Trip'}
               </Button>
             </div>
             {error && <p className="text-destructive text-sm mt-2">{error}</p>}
