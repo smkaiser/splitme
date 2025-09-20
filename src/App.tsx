@@ -298,47 +298,21 @@ function App({ tripSlug, tripName }: AppProps) {
           onOpenChange={setShowManageParticipants}
           participants={participants || []}
           expenses={expenses || []}
-          // Replace direct setters with remote operations
-          onUpdateParticipants={async (updated) => {
-            // Determine additions
-            const existingIds = new Set((participants || []).map(p => p.id))
-            const newOnes = updated.filter(p => !existingIds.has(p.id))
-            for (const p of newOnes) {
-              // We only have name locally; createParticipant will assign id
-              await createParticipant(p.name)
-            }
-            // Determine deletions
-            const updatedIds = new Set(updated.map(p => p.id))
-            for (const p of participants || []) {
-              if (!updatedIds.has(p.id)) {
-                await deleteParticipant(p.id)
+          canWrite={!!tripSecret}
+          remoteCreate={async (name: string) => { await createParticipant(name) }}
+          remoteDelete={async (participant, updatedExpenses) => {
+            // Update each affected expense first (remove participant references)
+            const existingMap = new Map((expenses || []).map(e => [e.id, e]))
+            for (const updated of updatedExpenses) {
+              const orig = existingMap.get(updated.id)
+              if (orig && (orig.participants.join(',') !== updated.participants.join(',') || orig.paidBy !== updated.paidBy)) {
+                await updateExpense(updated.id, {
+                  participants: updated.participants,
+                  paidBy: updated.paidBy
+                })
               }
             }
-          }}
-          onUpdateExpenses={async (updated) => {
-            // When participant removal affected expenses, sync deletions or updates
-            const currentMap = new Map((expenses || []).map(e => [e.id, e]))
-            for (const existing of expenses || []) {
-              if (!updated.find(e => e.id === existing.id)) {
-                await deleteExpense(existing.id)
-              }
-            }
-            for (const e of updated) {
-              const orig = currentMap.get(e.id)
-              if (orig) {
-                // Detect participant list change or payer change
-                if (orig.paidBy !== e.paidBy || orig.participants.join(',') !== e.participants.join(',') || orig.description !== e.description || orig.amount !== e.amount || orig.date !== e.date || orig.place !== e.place) {
-                  await updateExpense(e.id, {
-                    amount: e.amount,
-                    date: e.date,
-                    place: e.place,
-                    description: e.description,
-                    paidBy: e.paidBy,
-                    participants: e.participants
-                  })
-                }
-              }
-            }
+            await deleteParticipant(participant.id)
           }}
         />
         </div>

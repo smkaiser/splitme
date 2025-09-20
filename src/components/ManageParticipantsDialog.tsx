@@ -23,8 +23,9 @@ interface ManageParticipantsDialogProps {
   onOpenChange: (open: boolean) => void
   participants: Participant[]
   expenses: Expense[]
-  onUpdateParticipants: (participants: Participant[]) => void
-  onUpdateExpenses: (expenses: Expense[]) => void
+  canWrite?: boolean
+  remoteCreate?: (name: string) => Promise<void>
+  remoteDelete?: (participant: Participant, updatedExpenses: Expense[]) => Promise<void>
 }
 
 export function ManageParticipantsDialog({ 
@@ -32,35 +33,33 @@ export function ManageParticipantsDialog({
   onOpenChange, 
   participants, 
   expenses,
-  onUpdateParticipants,
-  onUpdateExpenses
+  canWrite = true,
+  remoteCreate,
+  remoteDelete
 }: ManageParticipantsDialogProps) {
   const [newParticipantName, setNewParticipantName] = useState('')
   const [error, setError] = useState('')
   const [participantToRemove, setParticipantToRemove] = useState<Participant | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  const handleAddParticipant = (e: React.FormEvent) => {
+  const handleAddParticipant = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+    if (!canWrite || busy) return
     const name = newParticipantName.trim()
-    if (!name) {
-      setError('Name is required')
-      return
-    }
-
+    if (!name) { setError('Name is required'); return }
     if (participants.some(p => p.name.toLowerCase() === name.toLowerCase())) {
       setError('This name is already added')
       return
     }
-
-    const newParticipant: Participant = {
-      id: Date.now().toString(),
-      name
-    }
-
-    onUpdateParticipants([...participants, newParticipant])
-    setNewParticipantName('')
-    setError('')
+    if (!remoteCreate) { setError('Remote create unavailable'); return }
+    try {
+      setBusy(true)
+      await remoteCreate(name)
+      setNewParticipantName('')
+      setError('')
+    } catch (err: any) {
+      setError(err.message || 'Failed to add participant')
+    } finally { setBusy(false) }
   }
 
   const getParticipantExpenseInfo = (participantId: string) => {
@@ -83,31 +82,29 @@ export function ManageParticipantsDialog({
     if (expenseInfo.total > 0) {
       setParticipantToRemove(participant)
     } else {
-      // No expenses related, safe to remove
-      onUpdateParticipants(participants.filter(p => p.id !== participant.id))
+      // No expenses related, safe to remove directly
+      confirmRemoveParticipant(participant)
     }
   }
-
-  const confirmRemoveParticipant = () => {
-    if (!participantToRemove) return
-
-    // Remove participant
-    const updatedParticipants = participants.filter(p => p.id !== participantToRemove.id)
-    onUpdateParticipants(updatedParticipants)
-
-    // Update expenses: remove participant from participant lists and remove expenses they paid for
-    const updatedExpenses = expenses
-      .map(expense => ({
-        ...expense,
-        participants: expense.participants.filter(id => id !== participantToRemove.id)
-      }))
-      .filter(expense => 
-        // Keep expense if someone else paid for it and there are still participants
-        expense.paidBy !== participantToRemove.id && expense.participants.length > 0
-      )
-
-    onUpdateExpenses(updatedExpenses)
-    setParticipantToRemove(null)
+  const confirmRemoveParticipant = async (direct?: Participant) => {
+    const target = direct || participantToRemove
+    if (!target || !remoteDelete) { setParticipantToRemove(null); return }
+    try {
+      setBusy(true)
+      // Recompute expenses transformations similar to previous logic
+      const updatedExpenses = expenses
+        .map(expense => ({
+          ...expense,
+          participants: expense.participants.filter(id => id !== target.id)
+        }))
+        .filter(expense => expense.paidBy !== target.id && expense.participants.length > 0)
+      await remoteDelete(target, updatedExpenses)
+    } catch (e: any) {
+      setError(e.message || 'Failed to remove participant')
+    } finally {
+      setBusy(false)
+      setParticipantToRemove(null)
+    }
   }
 
   return (
@@ -135,12 +132,14 @@ export function ManageParticipantsDialog({
                     setError('')
                   }}
                   className={error ? 'border-destructive' : ''}
+                  disabled={!canWrite || busy}
                 />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       type="submit"
                       size="sm"
+                      disabled={!canWrite || busy}
                       className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0"
                     >
                       <Plus className="w-4 h-4" />
@@ -197,7 +196,7 @@ export function ManageParticipantsDialog({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleRemoveParticipant(participant)}
+                                onClick={() => { if (canWrite && !busy) handleRemoveParticipant(participant) }}
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                               >
                                 <Trash className="w-4 h-4" />
@@ -216,8 +215,9 @@ export function ManageParticipantsDialog({
             )}
           </div>
 
-          <div className="flex justify-end pt-4">
-            <Button onClick={() => onOpenChange(false)}>
+          <div className="flex justify-end pt-4 gap-2">
+            {!canWrite && <span className="text-xs text-muted-foreground">Read only (set secret for changes)</span>}
+            <Button onClick={() => onOpenChange(false)} disabled={busy}>
               Done
             </Button>
           </div>
@@ -248,11 +248,10 @@ export function ManageParticipantsDialog({
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction 
-                onClick={confirmRemoveParticipant}
+                onClick={() => confirmRemoveParticipant()}
                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-              >
-                Remove Friend
-              </AlertDialogAction>
+                disabled={busy}
+              >Remove Friend</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
