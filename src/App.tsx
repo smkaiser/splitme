@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { useKV } from './hooks/useKV'
+import { useEffect, useState } from 'react'
+// Remote data hook replaces local KV storage
+import { useTripRemote } from './hooks/useTripRemote'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -34,11 +35,17 @@ export interface Expense {
 interface AppProps { tripSlug: string; tripName?: string }
 
 function App({ tripSlug, tripName }: AppProps) {
-  // Namespace keys by trip slug so each trip has isolated data
-  const participantsKey = `participants:${tripSlug}`
-  const expensesKey = `expenses:${tripSlug}`
-  const [participants, setParticipants] = useKV<Participant[]>(participantsKey, [])
-  const [expenses, setExpenses] = useKV<Expense[]>(expensesKey, [])
+  // Secret token handling: allow user to paste secret to enable write operations
+  const [secretInput, setSecretInput] = useState('')
+  const [tripSecret, setTripSecret] = useState<string | undefined>(undefined)
+  // Load any saved secret from sessionStorage for this slug
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(`trip-secret:${tripSlug}`)
+      if (saved) { setTripSecret(saved); setSecretInput(saved) }
+    } catch {}
+  }, [tripSlug])
+  const { participants, expenses, loading, error, createParticipant, deleteParticipant, createExpense, updateExpense, deleteExpense } = useTripRemote({ tripSlug, tripSecret })
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [showEditExpense, setShowEditExpense] = useState(false)
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
@@ -72,12 +79,15 @@ function App({ tripSlug, tripName }: AppProps) {
     }
   }
 
-  const handleUpdateExpense = (updatedExpense: Expense) => {
-    setExpenses((current) => 
-      (current || []).map(expense => 
-        expense.id === updatedExpense.id ? updatedExpense : expense
-      )
-    )
+  const handleUpdateExpense = async (updatedExpense: Expense) => {
+    await updateExpense(updatedExpense.id, {
+      description: updatedExpense.description,
+      amount: updatedExpense.amount,
+      date: updatedExpense.date,
+      place: updatedExpense.place,
+      paidBy: updatedExpense.paidBy,
+      participants: updatedExpense.participants
+    })
   }
 
   return (
@@ -88,6 +98,25 @@ function App({ tripSlug, tripName }: AppProps) {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">{tripName || 'Trip'} • SplitMe</h1>
           <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <button className="underline hover:no-underline" onClick={() => { window.location.href='/' }}>All Trips</button></p>
+          {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+          {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
+          <div className="mt-4 flex flex-col md:flex-row gap-2 items-center justify-center">
+            <input
+              type="password"
+              placeholder="Trip secret token (for edits)"
+              value={secretInput}
+              onChange={e => setSecretInput(e.target.value)}
+              className="px-3 py-2 rounded border text-sm w-72"
+            />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTripSecret(secretInput || undefined)
+                try { if (secretInput) sessionStorage.setItem(`trip-secret:${tripSlug}`, secretInput); else sessionStorage.removeItem(`trip-secret:${tripSlug}`) } catch {}
+              }}
+            >{tripSecret ? 'Update Secret' : 'Set Secret'}</Button>
+            {tripSecret && <span className="text-xs text-muted-foreground">Write access enabled</span>}
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -114,10 +143,11 @@ function App({ tripSlug, tripName }: AppProps) {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
-          <Button 
+          <Button
             onClick={() => setShowAddExpense(true)}
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
             size="lg"
+            disabled={!tripSecret}
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Expense
@@ -126,6 +156,7 @@ function App({ tripSlug, tripName }: AppProps) {
             variant="outline" 
             onClick={() => setShowManageParticipants(true)}
             size="lg"
+            disabled={!tripSecret}
           >
             <Users className="w-5 h-5 mr-2" />
             Manage Friends
@@ -191,6 +222,7 @@ function App({ tripSlug, tripName }: AppProps) {
                   <Button 
                     onClick={() => setShowAddExpense(true)}
                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                    disabled={!tripSecret}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add First Expense
@@ -206,9 +238,7 @@ function App({ tripSlug, tripName }: AppProps) {
                     expense={expense}
                     participants={participants || []}
                     onEdit={() => handleEditExpense(expense)}
-                    onDelete={(id) => {
-                      setExpenses((current) => (current || []).filter(e => e.id !== id))
-                    }}
+                    onDelete={async (id) => { await deleteExpense(id) }}
                   />
                 ))
             )}
@@ -242,8 +272,16 @@ function App({ tripSlug, tripName }: AppProps) {
           open={showAddExpense}
           onOpenChange={setShowAddExpense}
           participants={participants || []}
-          onAddExpense={(expense) => {
-            setExpenses((current) => [...(current || []), expense])
+          onAddExpense={async (expense) => {
+            // Create expense remotely (ignore local id fields, server returns canonical object)
+            await createExpense({
+              amount: expense.amount,
+              date: expense.date,
+              place: expense.place,
+              description: expense.description,
+              paidBy: expense.paidBy,
+              participants: expense.participants
+            })
           }}
         />
 
@@ -260,8 +298,48 @@ function App({ tripSlug, tripName }: AppProps) {
           onOpenChange={setShowManageParticipants}
           participants={participants || []}
           expenses={expenses || []}
-          onUpdateParticipants={setParticipants}
-          onUpdateExpenses={setExpenses}
+          // Replace direct setters with remote operations
+          onUpdateParticipants={async (updated) => {
+            // Determine additions
+            const existingIds = new Set((participants || []).map(p => p.id))
+            const newOnes = updated.filter(p => !existingIds.has(p.id))
+            for (const p of newOnes) {
+              // We only have name locally; createParticipant will assign id
+              await createParticipant(p.name)
+            }
+            // Determine deletions
+            const updatedIds = new Set(updated.map(p => p.id))
+            for (const p of participants || []) {
+              if (!updatedIds.has(p.id)) {
+                await deleteParticipant(p.id)
+              }
+            }
+          }}
+          onUpdateExpenses={async (updated) => {
+            // When participant removal affected expenses, sync deletions or updates
+            const currentMap = new Map((expenses || []).map(e => [e.id, e]))
+            for (const existing of expenses || []) {
+              if (!updated.find(e => e.id === existing.id)) {
+                await deleteExpense(existing.id)
+              }
+            }
+            for (const e of updated) {
+              const orig = currentMap.get(e.id)
+              if (orig) {
+                // Detect participant list change or payer change
+                if (orig.paidBy !== e.paidBy || orig.participants.join(',') !== e.participants.join(',') || orig.description !== e.description || orig.amount !== e.amount || orig.date !== e.date || orig.place !== e.place) {
+                  await updateExpense(e.id, {
+                    amount: e.amount,
+                    date: e.date,
+                    place: e.place,
+                    description: e.description,
+                    paidBy: e.paidBy,
+                    participants: e.participants
+                  })
+                }
+              }
+            }
+          }}
         />
         </div>
       </div>
