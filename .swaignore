@@ -1,0 +1,6 @@
+# Exclude large dev directories if action ever falls back to uploading repo root
+**/node_modules/**
+**/.git/**
+**/.github/**
+**/api/node_modules/**
+**/dist/**

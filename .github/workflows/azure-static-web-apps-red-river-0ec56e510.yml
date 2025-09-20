@@ -52,7 +52,7 @@ jobs:
           app_location: "/"
           api_location: "api"
           output_location: "dist"
-          skip_app_build: true   # we already built dist; allow API build for language detection
+          # Allow the action to perform its own app build in case dist was not produced (omit skip_app_build)
           # Removed skip_api_build to let the action detect Functions language & package properly
 
   close_pull_request_job:
