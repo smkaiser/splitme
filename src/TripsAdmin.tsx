@@ -1,29 +1,17 @@
 import { useState } from 'react'
-import { useKV } from './hooks/useKV'
-import { v4 as uuidv4 } from 'uuid'
 import { Trip } from './types'
+import { useTripsRemote } from './hooks/useTripsRemote'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Trash, Plus } from '@phosphor-icons/react'
 
-function slugify(name: string) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-interface TripSecret { slug: string; secretToken: string }
-
 export function TripsAdmin() {
-  const [trips, setTrips] = useKV<Trip[]>('trips', [])
-  const [tripSecrets, setTripSecrets] = useKV<TripSecret[]>('tripSecrets', [])
+  const { trips, loading, error: loadError, createTrip, deleteTrip, creating } = useTripsRemote()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
-  const apiBase = '/api'
+  const [lastSecret, setLastSecret] = useState<string | null>(null)
 
   const handleAdd = async () => {
     const trimmed = name.trim()
@@ -31,57 +19,19 @@ export function TripsAdmin() {
       setError('Trip name required')
       return
     }
-    setCreating(true)
-    const slugBase = slugify(trimmed)
-    let slug = slugBase
-    let i = 1
-    while ((trips || []).some(t => t.slug === slug)) {
-      slug = `${slugBase}-${i++}`
-    }
     try {
-      // Attempt remote creation first
-      const res = await fetch(`${apiBase}/trips`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmed, slug })
-      })
-      if (res.ok) {
-        const data = await res.json()
-        const newTrip: Trip = { id: data.tripId, name: data.name, slug: data.slug, createdAt: data.createdAt }
-        setTrips([...(trips || []), newTrip])
-        if (data.secretToken) {
-          setTripSecrets(prev => {
-            const without = (prev || []).filter(s => s.slug !== data.slug)
-            return [...without, { slug: data.slug, secretToken: data.secretToken }]
-          })
-        }
-        setError(null)
-      } else {
-        // Fallback to local-only if backend returns non-OK
-        const newTrip: Trip = { id: uuidv4(), name: trimmed, slug, createdAt: new Date().toISOString() }
-        setTrips([...(trips || []), newTrip])
-        setError('Created locally (remote failed)')
-      }
+      const { secretToken } = await createTrip(trimmed)
+      setLastSecret(secretToken || null)
+      setError(null)
       setName('')
     } catch (e: any) {
-      // Network / unexpected error fallback
-      const newTrip: Trip = { id: uuidv4(), name: trimmed, slug, createdAt: new Date().toISOString() }
-      setTrips([...(trips || []), newTrip])
-      setError('Created locally (offline)')
-    } finally {
-      setCreating(false)
+      setError(e.message || 'Failed to create trip')
     }
   }
 
-  const handleDelete = (trip: Trip) => {
+  const handleDelete = async (trip: Trip) => {
     if (!confirm(`Delete trip "${trip.name}"? This will remove all its data.`)) return
-    // Remove trip
-    setTrips((trips || []).filter(t => t.id !== trip.id))
-    // Cleanup namespaced keys
-    try {
-      localStorage.removeItem(`participants:${trip.slug}`)
-      localStorage.removeItem(`expenses:${trip.slug}`)
-    } catch {}
+    try { await deleteTrip(trip.slug) } catch (e: any) { setError(e.message || 'Delete failed') }
   }
 
   return (
@@ -89,7 +39,8 @@ export function TripsAdmin() {
       <div className="container mx-auto px-4 py-10 max-w-3xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2">Trips Admin</h1>
-          <p className="text-muted-foreground">Create and manage multiple trips</p>
+          <p className="text-muted-foreground">All trips are stored remotely. No local storage.</p>
+          {loadError && <p className="text-destructive text-sm mt-2">{loadError}</p>}
         </div>
 
         <Card className="mb-8">
@@ -111,13 +62,21 @@ export function TripsAdmin() {
               </Button>
             </div>
             {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+            {lastSecret && (
+              <p className="text-xs text-muted-foreground mt-2">Secret token (save securely): <code>{lastSecret}</code></p>
+            )}
           </CardContent>
         </Card>
 
         <div className="space-y-4">
-          {(trips || []).length === 0 && (
+          {(trips || []).length === 0 && !loading && (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">No trips yet. Create your first trip above.</CardContent>
+            </Card>
+          )}
+          {loading && (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">Loading trips...</CardContent>
             </Card>
           )}
           {(trips || [])
