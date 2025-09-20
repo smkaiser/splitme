@@ -2,11 +2,10 @@
   "name": "splitme-api",
   "private": true,
   "version": "0.1.0",
-  "type": "commonjs",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "build": "tsc -p .",
-    "start": "func start",
+    "start": "npm run build && func start",
     "clean": "rimraf dist"
   },
   "engines": {

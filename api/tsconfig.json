@@ -1,14 +1,18 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": ".",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "target": "ES2020",
+    "module": "commonjs",            // Use CommonJS for Functions host compatibility
+    "moduleResolution": "node",
+    "lib": ["ES2020"],
+    "strict": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "strict": true
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": ".",                   // Emit JS next to source (code-first model acceptable)
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "**/*.function.json", "**/function.json"]
 }
