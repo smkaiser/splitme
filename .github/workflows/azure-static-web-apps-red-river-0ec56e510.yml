@@ -39,6 +39,8 @@ jobs:
           cd api
           npm ci
           npm run build
+        # We still allow the SWA action to perform its API packaging step (skip_api_build not set)
+        # because Azure needs to infer the Functions language/runtime even in code-first model.
 
       - name: Deploy (Static Web Apps)
         id: builddeploy
@@ -50,8 +52,8 @@ jobs:
           app_location: "/"
           api_location: "api"
           output_location: "dist"
-          skip_app_build: true   # we already built dist
-          skip_api_build: true   # we already built api
+          skip_app_build: true   # we already built dist; allow API build for language detection
+          # Removed skip_api_build to let the action detect Functions language & package properly
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
