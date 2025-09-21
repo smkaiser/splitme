@@ -23,7 +23,6 @@ interface ManageParticipantsDialogProps {
   onOpenChange: (open: boolean) => void
   participants: Participant[]
   expenses: Expense[]
-  canWrite?: boolean
   remoteCreate?: (name: string) => Promise<void>
   remoteDelete?: (participant: Participant, updatedExpenses: Expense[]) => Promise<void>
 }
@@ -33,7 +32,6 @@ export function ManageParticipantsDialog({
   onOpenChange, 
   participants, 
   expenses,
-  canWrite = true,
   remoteCreate,
   remoteDelete
 }: ManageParticipantsDialogProps) {
@@ -44,7 +42,7 @@ export function ManageParticipantsDialog({
 
   const handleAddParticipant = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!canWrite || busy) return
+  if (busy) return
     const name = newParticipantName.trim()
     if (!name) { setError('Name is required'); return }
     if (participants.some(p => p.name.toLowerCase() === name.toLowerCase())) {
@@ -132,14 +130,14 @@ export function ManageParticipantsDialog({
                     setError('')
                   }}
                   className={error ? 'border-destructive' : ''}
-                  disabled={!canWrite || busy}
+                  disabled={busy}
                 />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       type="submit"
                       size="sm"
-                      disabled={!canWrite || busy}
+                      disabled={busy}
                       className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0"
                     >
                       <Plus className="w-4 h-4" />
@@ -196,7 +194,7 @@ export function ManageParticipantsDialog({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => { if (canWrite && !busy) handleRemoveParticipant(participant) }}
+                                onClick={() => { if (!busy) handleRemoveParticipant(participant) }}
                                 className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                               >
                                 <Trash className="w-4 h-4" />
@@ -216,7 +214,6 @@ export function ManageParticipantsDialog({
           </div>
 
           <div className="flex justify-end pt-4 gap-2">
-            {!canWrite && <span className="text-xs text-muted-foreground">Read only (set secret for changes)</span>}
             <Button onClick={() => onOpenChange(false)} disabled={busy}>
               Done
             </Button>

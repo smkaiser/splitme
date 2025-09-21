@@ -6,13 +6,10 @@ import type { Participant, Expense } from '@/App'
 // 1. Fetch trip data (participants + expenses)
 // 2. Provide mutation helpers that call backend then update local state
 // 3. Expose loading/error states
-// NOTE: Auth: caller provides tripSecret for write operations (x-trip-key header)
 
 export interface UseTripRemoteOptions {
   baseUrl?: string // default /api
   tripSlug: string
-  tripSecret?: string // required for writes
-  // onAuthError?: () => void (future improvement)
 }
 
 interface RemoteState {
@@ -23,7 +20,7 @@ interface RemoteState {
   refreshing: boolean
 }
 
-export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTripRemoteOptions) {
+export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptions) {
   const [state, setState] = useState<RemoteState>({ participants: [], expenses: [], loading: true, error: null, refreshing: false })
 
   const fetchAll = useCallback(async () => {
@@ -44,27 +41,17 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
   async function createParticipant(name: string) {
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(tripSecret ? { 'x-trip-key': tripSecret } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name })
     })
-    if (!res.ok) {
-      const msg = await safeErr(res)
-      if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
-      throw new Error(msg)
-    }
+    if (!res.ok) throw new Error(await safeErr(res))
     const p = await res.json()
     setState(s => ({ ...s, participants: [...s.participants, p] }))
     return p
   }
 
   async function deleteParticipant(id: string) {
-    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      headers: { ...(tripSecret ? { 'x-trip-key': tripSecret } : {}) }
-    })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants/${encodeURIComponent(id)}`, { method: 'DELETE' })
     if (res.status === 204) {
       setState(s => ({ ...s, participants: s.participants.filter(p => p.id !== id), expenses: s.expenses.filter(e => !e.participants.includes(id) && e.paidBy !== id) }))
       return
@@ -75,10 +62,7 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
   async function createExpense(expense: Omit<Expense, 'id' | 'createdAt'>) {
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(tripSecret ? { 'x-trip-key': tripSecret } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         amount: expense.amount,
         date: expense.date,
@@ -88,11 +72,7 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
         participants: expense.participants
       })
     })
-    if (!res.ok) {
-      const msg = await safeErr(res)
-      if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
-      throw new Error(msg)
-    }
+    if (!res.ok) throw new Error(await safeErr(res))
     const e = await res.json()
     setState(s => ({ ...s, expenses: [...s.expenses, e] }))
     return e as Expense
@@ -101,32 +81,21 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
   async function updateExpense(id: string, patch: Partial<Omit<Expense, 'id' | 'createdAt'>>) {
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(tripSecret ? { 'x-trip-key': tripSecret } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch)
     })
-    if (!res.ok) {
-      const msg = await safeErr(res)
-      if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
-      throw new Error(msg)
-    }
+    if (!res.ok) throw new Error(await safeErr(res))
     const updated = await res.json()
     setState(s => ({ ...s, expenses: s.expenses.map(e => e.id === id ? { ...e, ...updated } : e) }))
     return updated as Expense
   }
 
   async function deleteExpense(id: string) {
-    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      headers: { ...(tripSecret ? { 'x-trip-key': tripSecret } : {}) }
-    })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' })
     if (res.status === 204) {
       setState(s => ({ ...s, expenses: s.expenses.filter(e => e.id !== id) }))
       return
     }
-    if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
     throw new Error(await safeErr(res))
   }
 

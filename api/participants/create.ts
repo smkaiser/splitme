@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { getTableClient, getTripIdBySlug, listTripRows, newId, nowIso, requireWriteAuth } from '../shared/tableClient'
+import { getTableClient, getTripIdBySlug, listTripRows, newId, nowIso } from '../shared/tableClient'
 
 app.http('createParticipant', {
   methods: ['POST'],
@@ -16,8 +16,7 @@ app.http('createParticipant', {
       const tripId = await getTripIdBySlug(client, slug)
       if (!tripId) return { status: 404, jsonBody: { error: 'not found' } }
       const rows = await listTripRows(client, tripId)
-      const meta: any = rows.find(r => r.rowKey === 'meta')
-      requireWriteAuth(meta.secretToken, req.headers.get('x-trip-key') || undefined)
+  // Public mode: no auth required
 
       const participantId = newId()
       const now = nowIso()

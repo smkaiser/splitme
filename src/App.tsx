@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 // Remote data hook replaces local KV storage
 import { useTripRemote } from './hooks/useTripRemote'
 import { Button } from '@/components/ui/button'
@@ -35,17 +35,7 @@ export interface Expense {
 interface AppProps { tripSlug: string; tripName?: string }
 
 function App({ tripSlug, tripName }: AppProps) {
-  // Secret token handling: allow user to paste secret to enable write operations
-  const [secretInput, setSecretInput] = useState('')
-  const [tripSecret, setTripSecret] = useState<string | undefined>(undefined)
-  // Load any saved secret from sessionStorage for this slug
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(`trip-secret:${tripSlug}`)
-      if (saved) { setTripSecret(saved); setSecretInput(saved) }
-    } catch {}
-  }, [tripSlug])
-  const { participants, expenses, loading, error, createParticipant, deleteParticipant, createExpense, updateExpense, deleteExpense } = useTripRemote({ tripSlug, tripSecret })
+  const { participants, expenses, loading, error, createParticipant, deleteParticipant, createExpense, updateExpense, deleteExpense } = useTripRemote({ tripSlug })
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [showEditExpense, setShowEditExpense] = useState(false)
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
@@ -100,24 +90,7 @@ function App({ tripSlug, tripName }: AppProps) {
           <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <button className="underline hover:no-underline" onClick={() => { window.location.href='/' }}>All Trips</button></p>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
-          <div className="mt-4 flex flex-col md:flex-row gap-2 items-center justify-center">
-            <input
-              type="password"
-              placeholder="Trip secret token (for edits)"
-              value={secretInput}
-              onChange={e => setSecretInput(e.target.value)}
-              className="px-3 py-2 rounded border text-sm w-72"
-            />
-            <Button
-              variant="outline"
-              onClick={() => {
-                const trimmed = secretInput.trim()
-                setTripSecret(trimmed || undefined)
-                try { if (trimmed) sessionStorage.setItem(`trip-secret:${tripSlug}`, trimmed); else sessionStorage.removeItem(`trip-secret:${tripSlug}`) } catch {}
-              }}
-            >{tripSecret ? 'Update Secret' : 'Set Secret'}</Button>
-            {tripSecret && <span className="text-xs text-muted-foreground">Write access enabled</span>}
-          </div>
+          <p className="text-xs text-muted-foreground mt-4">Public editing enabled – anyone with the link can make changes.</p>
         </div>
 
         {/* Quick Stats */}
@@ -148,7 +121,7 @@ function App({ tripSlug, tripName }: AppProps) {
             onClick={() => setShowAddExpense(true)}
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
             size="lg"
-            disabled={!tripSecret}
+            
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Expense
@@ -157,7 +130,7 @@ function App({ tripSlug, tripName }: AppProps) {
             variant="outline" 
             onClick={() => setShowManageParticipants(true)}
             size="lg"
-            disabled={!tripSecret}
+            
           >
             <Users className="w-5 h-5 mr-2" />
             Manage Friends
@@ -223,7 +196,7 @@ function App({ tripSlug, tripName }: AppProps) {
                   <Button 
                     onClick={() => setShowAddExpense(true)}
                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                    disabled={!tripSecret}
+                    
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add First Expense
@@ -299,7 +272,7 @@ function App({ tripSlug, tripName }: AppProps) {
           onOpenChange={setShowManageParticipants}
           participants={participants || []}
           expenses={expenses || []}
-          canWrite={!!tripSecret}
+          canWrite={true}
           remoteCreate={async (name: string) => { await createParticipant(name) }}
           remoteDelete={async (participant, updatedExpenses) => {
             // Update each affected expense first (remove participant references)

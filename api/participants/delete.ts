@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { getTableClient, getTripIdBySlug, listTripRows, requireWriteAuth } from '../shared/tableClient'
+import { getTableClient, getTripIdBySlug, listTripRows } from '../shared/tableClient'
 
 app.http('deleteParticipant', {
   methods: ['DELETE'],
@@ -14,8 +14,7 @@ app.http('deleteParticipant', {
       const tripId = await getTripIdBySlug(client, slug)
       if (!tripId) return { status: 404, jsonBody: { error: 'not found' } }
       const rows = await listTripRows(client, tripId)
-      const meta: any = rows.find(r => r.rowKey === 'meta')
-      requireWriteAuth(meta.secretToken, req.headers.get('x-trip-key') || undefined)
+  // Public mode: no auth required
 
       // Prevent deletion if participant is referenced in an expense
       const expenseUsing = rows.find(r => r.type === 'expense' && (r.participantIds || '').split(',').includes(participantId))

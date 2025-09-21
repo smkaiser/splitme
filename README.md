@@ -18,13 +18,27 @@ This project has been extended to support multiple independent trips, each with 
 
 ### How it Works
 
-- Root path `/` shows the Trips Admin where you can create and delete trips.
-- Each trip gets a unique slug and is accessible at `/t/{slug}`.
-- Data is stored in `localStorage` namespaced by trip slug:
 	- `participants:{slug}`
 	- `expenses:{slug}`
 	- Trip list itself stored under `trips`.
-- CSV export filenames now include the trip slug.
+
+### Public Edit Mode
+
+The application currently runs in an intentionally open "public edit" mode: anyone with the trip URL can add/remove participants and expenses. The previous per‑trip `secretToken` header (`x-trip-key`) has been removed server and client side. The backend `requireWriteAuth` helper is now a no‑op kept only for compatibility.
+
+If you later want to reintroduce lightweight auth:
+
+1. Reinstate a `secretToken` field on the trip meta row when creating a trip.
+2. Change `requireWriteAuth` (in `api/shared/tableClient.ts`) to enforce matching token and update mutation endpoints to fetch trip meta and call it.
+3. Pass the token from the UI (store in `sessionStorage`) and send it as `x-trip-key` header in `useTripRemote` mutations.
+4. Optionally hide mutation buttons until a valid token is entered.
+
+For stronger auth (recommended longer term), consider:
+* Azure Static Web Apps built-in auth providers (GitHub, Microsoft, etc.) with roles.
+* A lightweight JWT issued by a simple custom auth function.
+* Moving to a proper multi-user model (per-user identities, row-level ownership metadata).
+
+Security note: Because trips are public-edit now, do not share links for production use where data integrity matters until auth is restored.
 
 ### Adding a Trip
 1. Go to `/` (root).

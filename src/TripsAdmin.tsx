@@ -11,7 +11,6 @@ export function TripsAdmin() {
   const { trips, loading, error: loadError, createTrip, deleteTrip, creating } = useTripsRemote()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [lastSecret, setLastSecret] = useState<string | null>(null)
 
   const handleAdd = async () => {
     const trimmed = name.trim()
@@ -20,8 +19,7 @@ export function TripsAdmin() {
       return
     }
     try {
-      const { secretToken } = await createTrip(trimmed)
-      setLastSecret(secretToken || null)
+  await createTrip(trimmed)
       setError(null)
       setName('')
     } catch (e: any) {
@@ -62,9 +60,6 @@ export function TripsAdmin() {
               </Button>
             </div>
             {error && <p className="text-destructive text-sm mt-2">{error}</p>}
-            {lastSecret && (
-              <p className="text-xs text-muted-foreground mt-2">Secret token (save securely): <code>{lastSecret}</code></p>
-            )}
           </CardContent>
         </Card>
 

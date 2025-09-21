@@ -24,7 +24,6 @@ export interface TripMetaRow {
   type: 'trip'
   name: string
   slug: string
-  secretToken: string
   createdAt: string
   updatedAt: string
 }
@@ -86,10 +85,5 @@ export async function listTripRows(client: TableClient, tripId: string) {
   return rows
 }
 
-export function requireWriteAuth(secretTokenFromRow: string, provided?: string) {
-  if (secretTokenFromRow && secretTokenFromRow !== provided) {
-    const err: any = new Error('Forbidden')
-    err.status = 403
-    throw err
-  }
-}
+// Public mode: auth disabled – keep function for compatibility (no-op)
+export function requireWriteAuth(_secretTokenFromRow: string, _provided?: string) { /* no-op */ }

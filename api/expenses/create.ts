@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
-import { getTableClient, getTripIdBySlug, listTripRows, newId, nowIso, requireWriteAuth } from '../shared/tableClient'
+import { getTableClient, getTripIdBySlug, listTripRows, newId, nowIso } from '../shared/tableClient'
 
 interface CreateExpenseBody {
   amount: number
@@ -35,8 +35,7 @@ app.http('createExpense', {
       const tripId = await getTripIdBySlug(client, slug)
       if (!tripId) return { status: 404, jsonBody: { error: 'not found' } }
       const rows = await listTripRows(client, tripId)
-      const meta: any = rows.find(r => r.rowKey === 'meta')
-      requireWriteAuth(meta.secretToken, req.headers.get('x-trip-key') || undefined)
+  // Public mode: no auth required
       const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => r.participantId))
       if (!participantIds.has(body.paidBy)) return { status: 400, jsonBody: { error: 'paidBy participant not found' } }
       for (const pid of body.participants) { if (!participantIds.has(pid)) return { status: 400, jsonBody: { error: `participant not found: ${pid}` } } }

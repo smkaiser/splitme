@@ -34,10 +34,10 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
     try {
       const res = await fetch(`${baseUrl}/trips`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
       if (!res.ok) throw new Error(await errText(res))
-      const data = await res.json()
-      const newTrip: Trip = { id: data.tripId, name: data.name, slug: data.slug, createdAt: data.createdAt }
-      setState(s => ({ ...s, trips: [newTrip, ...s.trips], creating: false }))
-      return { trip: newTrip, secretToken: data.secretToken }
+  const data = await res.json()
+  const newTrip: Trip = { id: data.tripId, name: data.name, slug: data.slug, createdAt: data.createdAt }
+  setState(s => ({ ...s, trips: [newTrip, ...s.trips], creating: false }))
+  return { trip: newTrip }
     } catch (e: any) {
       setState(s => ({ ...s, creating: false, error: e.message || 'create failed' }))
       throw e

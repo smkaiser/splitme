@@ -1,6 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { getTableClient, ensureTableExists, newId, nowIso, getTripIdBySlug, listTripRows } from '../shared/tableClient'
-import { randomBytes } from 'crypto'
 
 function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)
@@ -60,7 +59,6 @@ app.http('trips', {
       }
 
       const tripId = newId()
-      const secretToken = randomBytes(24).toString('hex')
       const now = nowIso()
 
       // trip meta row
@@ -70,7 +68,6 @@ app.http('trips', {
         type: 'trip',
         name,
         slug,
-        secretToken,
         createdAt: now,
         updatedAt: now
       })
@@ -83,7 +80,7 @@ app.http('trips', {
         name
       })
 
-      return { status: 201, jsonBody: { tripId, slug, name, secretToken, createdAt: now } }
+  return { status: 201, jsonBody: { tripId, slug, name, createdAt: now } }
     } catch (e: any) {
       ctx.error(e)
       return { status: e.status || 500, jsonBody: { error: e.message || 'internal error' } }
