@@ -93,24 +93,24 @@ function App({ tripSlug, tripName }: AppProps) {
           <p className="text-xs text-muted-foreground mt-4">Public editing enabled – anyone with the link can make changes.</p>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Quick Stats (condensed on mobile) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-8">
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-primary">${totalExpenses.toFixed(2)}</div>
-              <p className="text-sm text-muted-foreground">Total Expenses</p>
+            <CardContent className="py-3 sm:py-5">
+              <div className="text-xl sm:text-2xl font-bold text-primary">${totalExpenses.toFixed(2)}</div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Total Expenses</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-primary">{(expenses || []).length}</div>
-              <p className="text-sm text-muted-foreground">Expenses Recorded</p>
+            <CardContent className="py-3 sm:py-5">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{(expenses || []).length}</div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Expenses Recorded</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-primary">{(participants || []).length}</div>
-              <p className="text-sm text-muted-foreground">Trip Friends</p>
+            <CardContent className="py-3 sm:py-5">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{(participants || []).length}</div>
+              <p className="text-xs sm:text-sm text-muted-foreground">Trip Friends</p>
             </CardContent>
           </Card>
         </div>
