@@ -37,7 +37,6 @@ export function TripsAdmin() {
       <div className="container mx-auto px-4 py-10 max-w-3xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2">Trips Admin</h1>
-          <p className="text-muted-foreground">All trips are stored remotely. No local storage.</p>
           {loadError && <p className="text-destructive text-sm mt-2">{loadError}</p>}
         </div>
 

@@ -90,7 +90,6 @@ function App({ tripSlug, tripName }: AppProps) {
           <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <button className="underline hover:no-underline" onClick={() => { window.location.href='/' }}>All Trips</button></p>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
-          <p className="text-xs text-muted-foreground mt-4">Public editing enabled – anyone with the link can make changes.</p>
         </div>
 
         {/* Quick Stats (condensed on mobile) */}
