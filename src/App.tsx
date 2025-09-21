@@ -111,8 +111,9 @@ function App({ tripSlug, tripName }: AppProps) {
             <Button
               variant="outline"
               onClick={() => {
-                setTripSecret(secretInput || undefined)
-                try { if (secretInput) sessionStorage.setItem(`trip-secret:${tripSlug}`, secretInput); else sessionStorage.removeItem(`trip-secret:${tripSlug}`) } catch {}
+                const trimmed = secretInput.trim()
+                setTripSecret(trimmed || undefined)
+                try { if (trimmed) sessionStorage.setItem(`trip-secret:${tripSlug}`, trimmed); else sessionStorage.removeItem(`trip-secret:${tripSlug}`) } catch {}
               }}
             >{tripSecret ? 'Update Secret' : 'Set Secret'}</Button>
             {tripSecret && <span className="text-xs text-muted-foreground">Write access enabled</span>}
@@ -261,7 +262,7 @@ function App({ tripSlug, tripName }: AppProps) {
               </Card>
             ) : (
               settlements.map((settlement, index) => (
-                <SettlementCard key={index} settlement={settlement} />
+                <SettlementCard key={index} settlement={settlement} participants={participants || []} />
               ))
             )}
           </div>

@@ -1,18 +1,16 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { ArrowRight } from '@phosphor-icons/react'
 import { Settlement } from '@/lib/settlements'
-import { useKV } from '../hooks/useKV'
 import { Participant } from '@/App'
 
 interface SettlementCardProps {
   settlement: Settlement
+  participants: Participant[]
 }
 
-export function SettlementCard({ settlement }: SettlementCardProps) {
-  const [participants] = useKV<Participant[]>('participants', [])
-  
-  const fromParticipant = (participants || []).find(p => p.id === settlement.from)
-  const toParticipant = (participants || []).find(p => p.id === settlement.to)
+export function SettlementCard({ settlement, participants }: SettlementCardProps) {
+  const fromParticipant = participants.find(p => p.id === settlement.from)
+  const toParticipant = participants.find(p => p.id === settlement.to)
 
   return (
     <Card className="bg-card/50 border-accent/20">

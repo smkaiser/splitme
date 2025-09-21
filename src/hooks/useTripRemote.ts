@@ -50,7 +50,11 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
       },
       body: JSON.stringify({ name })
     })
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) {
+      const msg = await safeErr(res)
+      if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
+      throw new Error(msg)
+    }
     const p = await res.json()
     setState(s => ({ ...s, participants: [...s.participants, p] }))
     return p
@@ -84,7 +88,11 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
         participants: expense.participants
       })
     })
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) {
+      const msg = await safeErr(res)
+      if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
+      throw new Error(msg)
+    }
     const e = await res.json()
     setState(s => ({ ...s, expenses: [...s.expenses, e] }))
     return e as Expense
@@ -99,7 +107,11 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
       },
       body: JSON.stringify(patch)
     })
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) {
+      const msg = await safeErr(res)
+      if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
+      throw new Error(msg)
+    }
     const updated = await res.json()
     setState(s => ({ ...s, expenses: s.expenses.map(e => e.id === id ? { ...e, ...updated } : e) }))
     return updated as Expense
@@ -114,6 +126,7 @@ export function useTripRemote({ tripSlug, tripSecret, baseUrl = '/api' }: UseTri
       setState(s => ({ ...s, expenses: s.expenses.filter(e => e.id !== id) }))
       return
     }
+    if (res.status === 403) throw new Error('Forbidden: invalid or missing trip secret')
     throw new Error(await safeErr(res))
   }
 
