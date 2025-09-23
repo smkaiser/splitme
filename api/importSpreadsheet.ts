@@ -154,13 +154,11 @@ function parseAmount(v: any, warnings: string[]): number | null {
 }
 
 function parseDate(v: any, warnings: string[]): string {
-  if (!v) { warnings.push('date-missing'); return todayIso() }
+  if (!v) return todayIso()
   const s = v.toString().trim()
-  if (!s) { warnings.push('date-missing'); return todayIso() }
-  // Attempt Date.parse first
+  if (!s) return todayIso()
   let d = new Date(s)
   if (isNaN(d.getTime())) {
-    // Try DD/MM/YYYY vs MM/DD/YYYY heuristic
     const m = s.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})$/)
     if (m) {
       const a = parseInt(m[1],10), b = parseInt(m[2],10)

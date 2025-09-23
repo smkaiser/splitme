@@ -138,13 +138,16 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                 <tbody>
                   {rows.map(r => {
                     const valid = r.amount && r.description.trim()
+                    const descWarn = r.warnings.includes('missing-description') || r.warnings.includes('guessed-description') || !r.description.trim()
+                    const amtWarn = r.warnings.includes('invalid-amount') || r.amount == null || r.amount <= 0
+                    const dateWarn = r.warnings.includes('date-fallback')
                     return (
                       <tr key={r.index} className={!valid ? 'bg-amber-50' : ''}>
                         <td className="p-2 align-top"><input type="checkbox" checked={r.include} onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, include: e.target.checked } : x))} /></td>
                         <td className="p-2 align-top w-[110px]">
                           <Input
                             type="date"
-                            className="h-8"
+                            className={`h-8 ${dateWarn ? 'border-amber-400 focus-visible:ring-amber-400' : ''}`}
                             value={r.date}
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, date: e.target.value } : x))}
                           />
@@ -152,7 +155,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                         <td className="p-2 align-top min-w-[200px]">
                           <Input
                             value={r.description}
-                            className="h-8"
+                            className={`h-8 ${descWarn ? 'border-amber-400 focus-visible:ring-amber-400' : ''}`}
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, description: e.target.value } : x))}
                           />
                         </td>
@@ -160,7 +163,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                           <Input
                             type="number"
                             step="0.01"
-                            className="h-8 text-right"
+                            className={`h-8 text-right ${amtWarn ? 'border-amber-400 focus-visible:ring-amber-400' : ''}`}
                             value={r.amount ?? ''}
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, amount: Number(e.target.value) } : x))}
                           />
