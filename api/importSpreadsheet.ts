@@ -149,12 +149,28 @@ function parseAmount(v: any, warnings: string[]): number | null {
   // remove currency symbols & thousands separators
   s = s.replace(/[$€£,\s]/g,'')
   const num = Number(s)
-  if (!isFinite(num) || num <= 0) { warnings.push('invalid-amount'); return null }
+  if (!isFinite(num) || num === 0) { warnings.push('invalid-amount'); return null }
+  if (num < 0) { warnings.push('neg-adjusted'); return Number(Math.abs(num).toFixed(2)) }
   return Number(num.toFixed(2))
 }
 
 function parseDate(v: any, warnings: string[]): string {
-  if (!v) return todayIso()
+  if (v === undefined || v === null) return todayIso()
+  // Excel date serial number case
+  if (typeof v === 'number') {
+    // Excel serial (1900-based) valid range heuristic
+    if (v > 0 && v < 60000) {
+      const base = Date.UTC(1899, 11, 30) // Excel erroneously counts 1900-02-29; library often adjusts, but we mimic common base
+      const ms = base + v * 86400000
+      const d = new Date(ms)
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0,10)
+    } else {
+      // treat large number as timestamp ms maybe
+      const d2 = new Date(v)
+      if (!isNaN(d2.getTime())) return d2.toISOString().slice(0,10)
+    }
+  }
+  if (v instanceof Date && !isNaN(v.getTime())) return v.toISOString().slice(0,10)
   const s = v.toString().trim()
   if (!s) return todayIso()
   let d = new Date(s)
