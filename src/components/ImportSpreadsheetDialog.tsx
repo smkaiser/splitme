@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Participant } from '@/App'
-import { ScrollArea } from '@/components/ui/scroll-area'
+// Removed currency handling UI; assume USD implicitly. Added responsive scrollable layout.
 
 interface ParsedRow {
   index: number
@@ -12,7 +12,6 @@ interface ParsedRow {
   amount: number | null
   date: string
   description: string
-  currency?: string | null
   warnings: string[]
 }
 
@@ -86,7 +85,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v) }}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl md:max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Import Spreadsheet</DialogTitle>
           <DialogDescription>
@@ -119,21 +118,20 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
         )}
 
         {step === 2 && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 flex-1 min-h-0">
             <div className="flex flex-wrap gap-4 items-center text-sm">
               <div><span className="font-medium">Rows:</span> {rows.length}</div>
               <div><span className="font-medium">Valid:</span> {rows.filter(r => r.amount && r.description.trim()).length}</div>
-              <div><span className="font-medium">Currency:</span> {Array.from(new Set(rows.map(r => r.currency).filter(Boolean))).join(', ') || '—'}</div>
+              <div className="text-muted-foreground">Currency assumed USD ($)</div>
             </div>
-            <ScrollArea className="h-72 border rounded">
+            <div className="flex-1 min-h-0 border rounded overflow-auto">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10">
                   <tr className="bg-muted/40 text-left">
                     <th className="p-2">Include</th>
                     <th className="p-2">Date</th>
                     <th className="p-2">Description</th>
-                    <th className="p-2 text-right">Amount</th>
-                    <th className="p-2">Curr</th>
+                    <th className="p-2 text-right">Amount ($)</th>
                     <th className="p-2">Warnings</th>
                   </tr>
                 </thead>
@@ -151,14 +149,14 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, date: e.target.value } : x))}
                           />
                         </td>
-                        <td className="p-2 align-top min-w-[180px]">
+                        <td className="p-2 align-top min-w-[200px]">
                           <Input
                             value={r.description}
                             className="h-8"
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, description: e.target.value } : x))}
                           />
                         </td>
-                        <td className="p-2 align-top w-[110px]">
+                        <td className="p-2 align-top w-[120px]">
                           <Input
                             type="number"
                             step="0.01"
@@ -167,15 +165,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, amount: Number(e.target.value) } : x))}
                           />
                         </td>
-                        <td className="p-2 align-top w-[60px]">
-                          <Input
-                            value={r.currency || ''}
-                            className="h-8"
-                            maxLength={3}
-                            onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, currency: e.target.value.toUpperCase() } : x))}
-                          />
-                        </td>
-                        <td className="p-2 align-top w-[140px]">
+                        <td className="p-2 align-top w-[160px]">
                           {r.warnings.length > 0 && (
                             <div className="flex flex-col gap-1">
                               {r.warnings.map((w,i) => <span key={i} className="text-[10px] rounded bg-amber-200 text-amber-900 px-1 py-0.5 inline-block">{w}</span>)}
@@ -187,7 +177,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                   })}
                 </tbody>
               </table>
-            </ScrollArea>
+            </div>
             {error && <p className="text-sm text-destructive -mt-2">{error}</p>}
             <div className="flex justify-between items-center">
               <Button variant="outline" onClick={() => setStep(1)} disabled={importing}>Back</Button>
