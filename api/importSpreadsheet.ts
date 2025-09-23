@@ -80,16 +80,19 @@ function normalizeHeader(h: string) {
 }
 
 function parseCsv(text: string): ParsedRow[] {
-  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0)
+  // Normalize newlines and strip potential BOM
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1)
+  const rawLines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+  const lines = rawLines.filter(l => l.trim().length > 0)
   if (lines.length === 0) return []
-  const headerLine = lines[0]
-  const headers = headerLine.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(h => h.replace(/^"|"$/g,''))
+  const headerFields = splitCsvLine(lines[0])
+  const headers = headerFields.map(unquoteCsv)
   const norm = headers.map(normalizeHeader)
   const map = detectColumns(norm)
   const rows: ParsedRow[] = []
-  for (let i=1;i<lines.length;i++) {
-    const raw = lines[i]
-    const cols = raw.split(/,(?!(?:[^"]*"[^"]*")*[^"]*$)/) // simple fallback; may split inside quotes edge cases
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCsvLine(lines[i]).map(unquoteCsv)
+    if (cols.every(c => !c.trim())) continue // skip empty row
     const warnings: string[] = []
     const amountStr = pick(cols, map.amount)
     const amount = parseAmount(amountStr, warnings)
@@ -97,10 +100,34 @@ function parseCsv(text: string): ParsedRow[] {
     const date = parseDate(dateStr, warnings)
     const desc = resolveDescription(cols, map, warnings)
     const currency = map.currency != null ? sanitizeCurrency(pick(cols, map.currency), warnings) : undefined
-    rows.push({ index: i-1, include: true, amount, date, description: desc, currency, warnings })
+    rows.push({ index: rows.length, include: true, amount, date, description: desc, currency, warnings })
   }
   return rows
 }
+
+function splitCsvLine(line: string): string[] {
+  const out: string[] = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        // Escaped quote
+        if (line[i + 1] === '"') { cur += '"'; i++; continue }
+        inQuotes = false
+      } else {
+        cur += ch
+      }
+    } else {
+      if (ch === '"') { inQuotes = true } else if (ch === ',') { out.push(cur); cur = '' } else { cur += ch }
+    }
+  }
+  out.push(cur)
+  return out
+}
+
+function unquoteCsv(v: string): string { return v.trim() }
 
 function parseXlsx(buf: Buffer): ParsedRow[] {
   const wb = XLSX.read(buf, { type: 'buffer' })
