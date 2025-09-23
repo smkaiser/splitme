@@ -17,8 +17,7 @@ functions_1.app.http('deleteParticipant', {
             if (!tripId)
                 return { status: 404, jsonBody: { error: 'not found' } };
             const rows = await (0, tableClient_1.listTripRows)(client, tripId);
-            const meta = rows.find(r => r.rowKey === 'meta');
-            (0, tableClient_1.requireWriteAuth)(meta.secretToken, req.headers.get('x-trip-key') || undefined);
+            // Public mode: no auth required
             // Prevent deletion if participant is referenced in an expense
             const expenseUsing = rows.find(r => r.type === 'expense' && (r.participantIds || '').split(',').includes(participantId));
             if (expenseUsing)

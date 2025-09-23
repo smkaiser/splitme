@@ -13,6 +13,7 @@ import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { SettlementCard } from '@/components/SettlementCard'
+import { ImportSpreadsheetDialog } from '@/components/ImportSpreadsheetDialog'
 import { calculateSettlements } from '@/lib/settlements'
 import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
 
@@ -42,6 +43,7 @@ function App({ tripSlug, tripName }: AppProps) {
   const [showManageParticipants, setShowManageParticipants] = useState(false)
   const [activeTab, setActiveTab] = useState<'expenses' | 'settlements'>('expenses')
   const [isExporting, setIsExporting] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   const settlements = calculateSettlements(expenses || [], participants || [])
   const totalExpenses = (expenses || []).reduce((sum, expense) => sum + expense.amount, 0)
@@ -116,6 +118,13 @@ function App({ tripSlug, tripName }: AppProps) {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
+          <Button
+            variant="outline"
+            onClick={() => setShowImport(true)}
+            size="lg"
+          >
+            Import Spreadsheet
+          </Button>
           <Button
             onClick={() => setShowAddExpense(true)}
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
@@ -271,7 +280,6 @@ function App({ tripSlug, tripName }: AppProps) {
           onOpenChange={setShowManageParticipants}
           participants={participants || []}
           expenses={expenses || []}
-          canWrite={true}
           remoteCreate={async (name: string) => { await createParticipant(name) }}
           remoteDelete={async (participant, updatedExpenses) => {
             // Update each affected expense first (remove participant references)
@@ -286,6 +294,16 @@ function App({ tripSlug, tripName }: AppProps) {
               }
             }
             await deleteParticipant(participant.id)
+          }}
+        />
+        <ImportSpreadsheetDialog
+          open={showImport}
+          onOpenChange={setShowImport}
+          tripSlug={tripSlug}
+          participants={participants || []}
+          onImported={() => { /* refresh already implicit via createExpense which mutates state */ }}
+          createExpense={async ({ amount, date, place, description, paidBy, participants }) => {
+            await createExpense({ amount, date, place, description, paidBy, participants })
           }}
         />
         </div>

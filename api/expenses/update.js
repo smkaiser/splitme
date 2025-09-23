@@ -45,8 +45,7 @@ functions_1.app.http('updateExpense', {
             if (!tripId)
                 return { status: 404, jsonBody: { error: 'not found' } };
             const rows = await (0, tableClient_1.listTripRows)(client, tripId);
-            const meta = rows.find(r => r.rowKey === 'meta');
-            (0, tableClient_1.requireWriteAuth)(meta.secretToken, req.headers.get('x-trip-key') || undefined);
+            // Public mode: no auth required
             const expense = rows.find(r => r.rowKey === `expense:${expenseId}`);
             if (!expense)
                 return { status: 404, jsonBody: { error: 'expense not found' } };

@@ -7,5 +7,6 @@ import './participants/delete'
 import './expenses/create'
 import './expenses/update'
 import './expenses/delete'
+import './importSpreadsheet'
 
 // No exports needed; side-effect imports register functions.

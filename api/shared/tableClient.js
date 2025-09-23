@@ -53,11 +53,6 @@ async function listTripRows(client, tripId) {
     }
     return rows;
 }
-function requireWriteAuth(secretTokenFromRow, provided) {
-    if (secretTokenFromRow && secretTokenFromRow !== provided) {
-        const err = new Error('Forbidden');
-        err.status = 403;
-        throw err;
-    }
-}
+// Public mode: auth disabled – keep function for compatibility (no-op)
+function requireWriteAuth(_secretTokenFromRow, _provided) { }
 //# sourceMappingURL=tableClient.js.map

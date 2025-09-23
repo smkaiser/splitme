@@ -9,5 +9,6 @@ require("./participants/delete");
 require("./expenses/create");
 require("./expenses/update");
 require("./expenses/delete");
+require("./importSpreadsheet");
 // No exports needed; side-effect imports register functions.
 //# sourceMappingURL=index.js.map
