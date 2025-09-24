@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from 'sonner'
-import { Plus, Receipt, Users, Calculator, Download, GridNineIcon } from '@phosphor-icons/react'
+import { PlusIcon, ReceiptIcon, UsersIcon, CalculatorIcon, DownloadIcon, GridNineIcon } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
@@ -124,7 +124,7 @@ function App({ tripSlug, tripName }: AppProps) {
             size="lg"
             
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <PlusIcon className="w-5 h-5 mr-2" />
             Add Expense
           </Button>
           <Button
@@ -141,7 +141,7 @@ function App({ tripSlug, tripName }: AppProps) {
             size="lg"
             
           >
-            <Users className="w-5 h-5 mr-2" />
+            <UsersIcon className="w-5 h-5 mr-2" />
             Manage Friends
           </Button>
           {(expenses || []).length > 0 && (
@@ -151,7 +151,7 @@ function App({ tripSlug, tripName }: AppProps) {
               disabled={isExporting}
               size="lg"
             >
-              <Download className="w-5 h-5 mr-2" />
+              <DownloadIcon className="w-5 h-5 mr-2" />
               {isExporting ? 'Exporting...' : 'Export CSV'}
             </Button>
           )}
@@ -164,7 +164,7 @@ function App({ tripSlug, tripName }: AppProps) {
             onClick={() => setActiveTab('expenses')}
             className="flex-1 md:flex-none"
           >
-            <Receipt className="w-4 h-4 mr-2" />
+            <ReceiptIcon className="w-4 h-4 mr-2" />
             Expenses
           </Button>
           <Button
@@ -172,7 +172,7 @@ function App({ tripSlug, tripName }: AppProps) {
             onClick={() => setActiveTab('settlements')}
             className="flex-1 md:flex-none"
           >
-            <Calculator className="w-4 h-4 mr-2" />
+            <CalculatorIcon className="w-4 h-4 mr-2" />
             Settlements
           </Button>
           
@@ -185,7 +185,7 @@ function App({ tripSlug, tripName }: AppProps) {
               disabled={isExporting}
               className="ml-auto"
             >
-              <Download className="w-4 h-4 mr-2" />
+              <DownloadIcon className="w-4 h-4 mr-2" />
               {isExporting ? 'Exporting...' : 'Export Settlements'}
             </Button>
           )}
@@ -197,7 +197,7 @@ function App({ tripSlug, tripName }: AppProps) {
             {(expenses || []).length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <Receipt className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <ReceiptIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No expenses yet</h3>
                   <p className="text-muted-foreground mb-4">
                     Start by adding your first shared expense from your trip
@@ -207,7 +207,7 @@ function App({ tripSlug, tripName }: AppProps) {
                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
                     
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <PlusIcon className="w-4 h-4 mr-2" />
                     Add First Expense
                   </Button>
                 </CardContent>
@@ -233,7 +233,7 @@ function App({ tripSlug, tripName }: AppProps) {
             {settlements.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
-                  <Calculator className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <CalculatorIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">All settled up!</h3>
                   <p className="text-muted-foreground">
                     {(expenses || []).length === 0 
