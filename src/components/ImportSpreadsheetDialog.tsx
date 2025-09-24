@@ -12,6 +12,7 @@ interface ParsedRow {
   amount: number | null
   date: string
   description: string
+  merchant?: string | null
   warnings: string[]
 }
 
@@ -69,7 +70,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
         await createExpense({
           amount: r.amount,
           date: r.date,
-          place: '',
+            place: (r.merchant || '').trim(),
           description: r.description.trim(),
           paidBy,
           participants: allParticipantIds
@@ -133,6 +134,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                     <th className="p-2">Include</th>
                     <th className="p-2">Date</th>
                     <th className="p-2">Description</th>
+                    <th className="p-2">Merchant</th>
                     <th className="p-2 text-right">Amount ($)</th>
                     <th className="p-2">Warnings</th>
                   </tr>
@@ -159,6 +161,14 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
                             value={r.description}
                             className={`h-8 ${descWarn ? 'border-amber-400 focus-visible:ring-amber-400' : ''}`}
                             onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, description: e.target.value } : x))}
+                          />
+                        </td>
+                        <td className="p-2 align-top min-w-[160px]">
+                          <Input
+                            value={r.merchant || ''}
+                            className="h-8"
+                            placeholder="(optional)"
+                            onChange={e => setRows(rs => rs.map(x => x.index === r.index ? { ...x, merchant: e.target.value } : x))}
                           />
                         </td>
                         <td className="p-2 align-top w-[120px]">

@@ -8,6 +8,7 @@ interface ParsedRow {
   amount: number | null
   date: string // ISO (yyyy-mm-dd)
   description: string
+  merchant?: string | null
   currency?: string | null
   warnings: string[]
 }
@@ -98,9 +99,10 @@ function parseCsv(text: string): ParsedRow[] {
     const amount = parseAmount(amountStr, warnings)
     const dateStr = pick(cols, map.date)
     const date = parseDate(dateStr, warnings)
-    const desc = resolveDescription(cols, map, warnings)
+    const { description: desc, merchant: merchCaptured } = resolveDescription(cols, map, warnings)
     const currency = map.currency != null ? sanitizeCurrency(pick(cols, map.currency), warnings) : undefined
-    rows.push({ index: rows.length, include: true, amount, date, description: desc, currency, warnings })
+    const merchantVal = map.merchant != null ? pick(cols, map.merchant) || merchCaptured || null : (merchCaptured || null)
+    rows.push({ index: rows.length, include: true, amount, date, description: desc, merchant: merchantVal, currency, warnings })
   }
   return rows
 }
@@ -146,8 +148,9 @@ function parseXlsx(buf: Buffer): ParsedRow[] {
     const amount = parseAmount(row[headers[map.amount ?? -1]], warnings)
     const date = parseDate(row[headers[map.date ?? -1]], warnings)
     const currency = map.currency != null ? sanitizeCurrency(row[headers[map.currency]], warnings) : undefined
-    const desc = resolveDescriptionObject(row, headers, map, warnings)
-    rows.push({ index: idx, include: true, amount, date, description: desc, currency, warnings })
+    const { description: desc, merchant: merchCaptured } = resolveDescriptionObject(row, headers, map, warnings)
+    const merchantVal = map.merchant != null ? (row[headers[map.merchant]] || '').toString().trim() || merchCaptured || null : (merchCaptured || null)
+    rows.push({ index: idx, include: true, amount, date, description: desc, merchant: merchantVal, currency, warnings })
   })
   return rows
 }
@@ -226,27 +229,35 @@ function sanitizeCurrency(v: any, warnings: string[]): string | null {
   return null
 }
 
-function resolveDescription(cols: any[], map: ColumnMap, warnings: string[]): string {
-  if (map.description != null) return pick(cols, map.description)
-  if (map.merchant != null) return pick(cols, map.merchant)
-  // fallback: first non-empty non amount/date cell
+interface DescriptionResult { description: string; merchant?: string | null }
+
+function resolveDescription(cols: any[], map: ColumnMap, warnings: string[]): DescriptionResult {
+  // Try explicit description column
+  let desc = map.description != null ? pick(cols, map.description) : ''
+  const merchant = map.merchant != null ? pick(cols, map.merchant) : ''
+  if (desc) return { description: desc, merchant }
+  // If description column exists but empty, fallback to merchant if available
+  if (!desc && merchant) { warnings.push('guessed-description'); return { description: merchant, merchant } }
+  // Fallback: search other textual cells excluding amount/date/description/merchant
   for (let i=0;i<cols.length;i++) {
-    if ([map.amount, map.date].includes(i)) continue
+    if ([map.amount, map.date, map.description, map.merchant].includes(i)) continue
     const val = pick(cols, i)
-    if (val) { warnings.push('guessed-description'); return val }
+    if (val) { warnings.push('guessed-description'); return { description: val, merchant } }
   }
   warnings.push('missing-description')
-  return ''
+  return { description: '', merchant }
 }
 
-function resolveDescriptionObject(row: any, headers: string[], map: ColumnMap, warnings: string[]): string {
-  if (map.description != null) return (row[headers[map.description]] || '').toString().trim()
-  if (map.merchant != null) return (row[headers[map.merchant]] || '').toString().trim()
+function resolveDescriptionObject(row: any, headers: string[], map: ColumnMap, warnings: string[]): DescriptionResult {
+  let desc = map.description != null ? (row[headers[map.description]] || '').toString().trim() : ''
+  const merchant = map.merchant != null ? (row[headers[map.merchant]] || '').toString().trim() : ''
+  if (desc) return { description: desc, merchant }
+  if (!desc && merchant) { warnings.push('guessed-description'); return { description: merchant, merchant } }
   for (let i=0;i<headers.length;i++) {
-    if ([map.amount, map.date].includes(i)) continue
+    if ([map.amount, map.date, map.description, map.merchant].includes(i)) continue
     const val = (row[headers[i]] || '').toString().trim()
-    if (val) { warnings.push('guessed-description'); return val }
+    if (val) { warnings.push('guessed-description'); return { description: val, merchant } }
   }
   warnings.push('missing-description')
-  return ''
+  return { description: '', merchant }
 }
