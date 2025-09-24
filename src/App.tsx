@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from 'sonner'
-import { Plus, Receipt, Users, Calculator, Download } from '@phosphor-icons/react'
+import { Plus, Receipt, Users, Calculator, Download, GridNineIcon } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
@@ -132,6 +132,7 @@ function App({ tripSlug, tripName }: AppProps) {
             onClick={() => setShowImport(true)}
             size="lg"
           >
+            <GridNineIcon className="w-5 h-5 mr-2" />
             Import Spreadsheet
           </Button>
           <Button 
