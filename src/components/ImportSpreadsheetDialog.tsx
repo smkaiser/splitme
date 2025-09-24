@@ -85,7 +85,8 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v) }}>
-      <DialogContent className="max-w-4xl md:max-h-[85vh] overflow-hidden flex flex-col">
+      {/* Mobile scroll fix: make the dialog itself scroll within viewport on small screens */}
+      <DialogContent className="max-w-4xl w-[94vw] sm:w-auto max-h-[90vh] md:max-h-[85vh] flex flex-col overflow-auto">
         <DialogHeader>
           <DialogTitle>Import Spreadsheet</DialogTitle>
           <DialogDescription>
@@ -94,7 +95,8 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
         </DialogHeader>
 
         {step === 1 && (
-          <div className="space-y-6">
+          // Wrap step 1 content in its own scroll region so tall forms don't overflow on short viewports
+          <div className="space-y-6 overflow-y-auto pr-1">
             <div className="space-y-2">
               <Label>Payer (who paid all these)</Label>
               <select className="border rounded px-2 py-1 text-sm w-full" value={paidBy} onChange={e => setPaidBy(e.target.value)}>

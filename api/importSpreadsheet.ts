@@ -131,7 +131,9 @@ function unquoteCsv(v: string): string { return v.trim() }
 
 function parseXlsx(buf: Buffer): ParsedRow[] {
   const wb = XLSX.read(buf, { type: 'buffer' })
+  // Explicitly only use the very first sheet even if others exist (requirement)
   const sheetName = wb.SheetNames[0]
+  if (!sheetName) return []
   const sheet = wb.Sheets[sheetName]
   const json: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
   if (json.length === 0) return []
