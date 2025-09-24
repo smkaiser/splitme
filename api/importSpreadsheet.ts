@@ -158,8 +158,8 @@ function detectColumns(norm: string[]): ColumnMap {
   norm.forEach((h,i) => {
     if (map.amount == null && /^(amount|amt|total|value)$/.test(h)) map.amount = i
     else if (map.date == null && /^(date|transactiondate|dt)$/.test(h)) map.date = i
-    else if (map.description == null && /^(description|desc|note|notes|memo)$/.test(h)) map.description = i
-    else if (map.merchant == null && /^(merchant|vendor|store|place|shop)$/.test(h)) map.merchant = i
+    else if (map.description == null && /^(description|desc|note|notes|comment|comments|memo)$/.test(h)) map.description = i
+    else if (map.merchant == null && /^(merchant|vendor|store|where|place|shop)$/.test(h)) map.merchant = i
     else if (map.currency == null && /^(currency|curr|ccy)$/.test(h)) map.currency = i
   })
   return map
