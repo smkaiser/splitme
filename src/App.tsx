@@ -119,13 +119,6 @@ function App({ tripSlug, tripName }: AppProps) {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
           <Button
-            variant="outline"
-            onClick={() => setShowImport(true)}
-            size="lg"
-          >
-            Import Spreadsheet
-          </Button>
-          <Button
             onClick={() => setShowAddExpense(true)}
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
             size="lg"
@@ -133,6 +126,13 @@ function App({ tripSlug, tripName }: AppProps) {
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Expense
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowImport(true)}
+            size="lg"
+          >
+            Import Spreadsheet
           </Button>
           <Button 
             variant="outline" 
