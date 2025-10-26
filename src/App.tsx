@@ -16,6 +16,8 @@ import { SettlementCard } from '@/components/SettlementCard'
 import { ImportSpreadsheetDialog } from '@/components/ImportSpreadsheetDialog'
 import { calculateSettlements } from '@/lib/settlements'
 import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
+import { AUTH_PROVIDERS, useAuth } from './hooks/useAuth'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 export interface Participant {
   id: string
@@ -37,6 +39,7 @@ interface AppProps { tripSlug: string; tripName?: string }
 
 function App({ tripSlug, tripName }: AppProps) {
   const { participants, expenses, loading, error, createParticipant, deleteParticipant, createExpense, updateExpense, deleteExpense } = useTripRemote({ tripSlug })
+  const { user, loading: authLoading, login, logout } = useAuth()
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [showEditExpense, setShowEditExpense] = useState(false)
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
@@ -82,10 +85,40 @@ function App({ tripSlug, tripName }: AppProps) {
     })
   }
 
+  const handleProviderLogin = (providerId: string) => {
+    login(providerId, window.location.href)
+  }
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex justify-end items-center gap-3 mb-4">
+          {authLoading ? (
+            <span className="text-sm text-muted-foreground">Checking account…</span>
+          ) : user ? (
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="hidden sm:inline">Signed in as {user.name}</span>
+              <Button variant="outline" size="sm" onClick={() => logout(window.location.href)}>Sign out</Button>
+            </div>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">Sign in</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {AUTH_PROVIDERS.map(provider => (
+                  <DropdownMenuItem key={provider.id} onClick={() => handleProviderLogin(provider.id)}>
+                    {provider.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onClick={() => { window.location.href = '/' }}>
+                  More options…
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">{tripName || 'Trip'} • SplitMe</h1>

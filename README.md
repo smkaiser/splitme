@@ -22,23 +22,23 @@ This project has been extended to support multiple independent trips, each with 
 	- `expenses:{slug}`
 	- Trip list itself stored under `trips`.
 
-### Public Edit Mode
+### Authentication & Guest Access
 
-The application currently runs in an intentionally open "public edit" mode: anyone with the trip URL can add/remove participants and expenses. The previous per‑trip `secretToken` header (`x-trip-key`) has been removed server and client side. The backend `requireWriteAuth` helper is now a no‑op kept only for compatibility.
+Trip creation and deletion now require a signed-in account. The app uses Azure Static Web Apps built-in authentication with quick sign-in buttons for:
 
-If you later want to reintroduce lightweight auth:
+- Microsoft (Azure AD)
+- Google
+- GitHub
+- Twitter
+- Facebook
 
-1. Reinstate a `secretToken` field on the trip meta row when creating a trip.
-2. Change `requireWriteAuth` (in `api/shared/tableClient.ts`) to enforce matching token and update mutation endpoints to fetch trip meta and call it.
-3. Pass the token from the UI (store in `sessionStorage`) and send it as `x-trip-key` header in `useTripRemote` mutations.
-4. Optionally hide mutation buttons until a valid token is entered.
+You can enable additional providers in the Azure portal as needed—the frontend menu automatically exposes anything listed in `AUTH_PROVIDERS`.
 
-For stronger auth (recommended longer term), consider:
-* Azure Static Web Apps built-in auth providers (GitHub, Microsoft, etc.) with roles.
-* A lightweight JWT issued by a simple custom auth function.
-* Moving to a proper multi-user model (per-user identities, row-level ownership metadata).
+Guests can still participate in existing trips without signing in. The homepage offers a "Join a Trip" input for people who only have the shared `/t/{slug}` URL. Once inside a trip, the expense interface remains open so collaborators without accounts can contribute.
 
-Security note: Because trips are public-edit now, do not share links for production use where data integrity matters until auth is restored.
+**Enabling providers**: In the Static Web Apps resource, configure the chosen identity providers (client IDs/secrets where required) and ensure post-login redirects include the site origin (defaults work for SWA). No secrets are stored in the repo; everything relies on the platform-managed auth flow.
+
+Security note: Trip URLs behave as shared secrets—anyone with the link can still view and edit that specific trip. Require sign-in only gates administrative actions (creating or deleting trips). If you need stricter controls, extend the owner metadata checks to other endpoints.
 
 ### Adding a Trip
 1. Go to `/` (root).
@@ -61,21 +61,22 @@ The app now includes an optional serverless backend (in `api/`) that enables sha
 ### Data Model (Table Rows)
 PartitionKey = tripId (except slug index rows)
 
-- Trip meta: `partitionKey=tripId`, `rowKey=meta`
+- Trip meta: `partitionKey=tripId`, `rowKey=meta`, includes `ownerId`, `ownerName`, `ownerProvider`
 - Participant: `rowKey=participant:{participantId}`
 - Expense: `rowKey=expense:{expenseId}`
-- Slug index: `partitionKey=slug`, `rowKey={slug}`, property `tripId`
+- Slug index: `partitionKey=slug`, `rowKey={slug}`, properties `tripId`, `ownerId`, `ownerName`, `ownerProvider`, `name`, `createdAt`
 
-Each trip gets a `secretToken` stored only in the meta row. All write operations require header: `x-trip-key: {secretToken}`. Reads are anonymous.
+Owner metadata is stamped when a signed-in user creates a trip. Legacy trips without owner info are considered "unclaimed" and can be managed by any authenticated user until ownership is set.
 
 ### Functions Implemented
-- POST ` /api/trips` → create trip (body: `{ name, slug? }`) returns `{ tripId, slug, name, secretToken }`
+- POST ` /api/trips` (auth required) → create trip (body: `{ name, slug? }`) returns `{ tripId, slug, name, createdAt, ownerId, ownerName, ownerProvider }`
 - GET ` /api/trips/{slug}` → fetch trip (participants + expenses)
 - POST ` /api/trips/{slug}/participants` (auth) → add participant
 - DELETE ` /api/trips/{slug}/participants/{participantId}` (auth) → delete participant (fails 409 if referenced)
 - POST ` /api/trips/{slug}/expenses` (auth) → add expense
 - PATCH ` /api/trips/{slug}/expenses/{expenseId}` (auth) → update expense
 - DELETE ` /api/trips/{slug}/expenses/{expenseId}` (auth) → delete expense
+- DELETE ` /api/trips/{slug}` (auth) → delete trip (only owner, or unclaimed legacy trip)
 
 ### Running Locally
 
@@ -119,12 +120,12 @@ az functionapp config set -g <rg> -n <func-app-name> --linux-fx-version "NODE|18
 | `TABLE_NAME` | Override table name (default `TripsData`) |
 
 ### Static Web Apps Routing
-The file `staticwebapp.config.json` provides SPA routing so deep links like `/t/{slug}` work in production and ensures `/api/*` is left to Functions. If you customize routes, keep the catch-all rewrite to `index.html`.
+The file `staticwebapp.config.json` provides SPA routing so deep links like `/t/{slug}` work in production and ensures `/api/*` is left to Functions. A specific rule now requires authentication for `/api/trips` while leaving the rest of the API anonymous so trip pages remain guest-friendly. If you customize routes, keep the catch-all rewrite to `index.html`.
 
 ### Security Notes
-- Secret token is returned only on trip creation; store it client-side (e.g., localStorage) to enable future mutations.
-- Reads are open; you can later introduce a read token or restrict by adding validation in `getTripBySlug`.
-- Future: Add ETag-based concurrency control on updates; currently last write wins.
+- Trip creation/deletion is locked behind platform auth; only the owner (or a signed-in user when ownership is missing) can delete a trip.
+- Trip content remains editable by anyone with the slug URL. Extend the ownership checks to participant/expense endpoints if you need stricter controls.
+- Consider adding ETag-based concurrency control on updates; currently last write wins.
 
 ### Planned Enhancements
 - Frontend integration: replace local `useKV` with `useTripRemote` selectively when a remote trip is detected.

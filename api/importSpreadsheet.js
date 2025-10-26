@@ -127,9 +127,10 @@ function parseCsv(text) {
         const amount = parseAmount(amountStr, warnings);
         const dateStr = pick(cols, map.date);
         const date = parseDate(dateStr, warnings);
-        const desc = resolveDescription(cols, map, warnings);
+        const { description: desc, merchant: merchCaptured } = resolveDescription(cols, map, warnings);
         const currency = map.currency != null ? sanitizeCurrency(pick(cols, map.currency), warnings) : undefined;
-        rows.push({ index: rows.length, include: true, amount, date, description: desc, currency, warnings });
+        const merchantVal = map.merchant != null ? pick(cols, map.merchant) || merchCaptured || null : (merchCaptured || null);
+        rows.push({ index: rows.length, include: true, amount, date, description: desc, merchant: merchantVal, currency, warnings });
     }
     return rows;
 }
@@ -172,7 +173,10 @@ function splitCsvLine(line) {
 function unquoteCsv(v) { return v.trim(); }
 function parseXlsx(buf) {
     const wb = XLSX.read(buf, { type: 'buffer' });
+    // Explicitly only use the very first sheet even if others exist (requirement)
     const sheetName = wb.SheetNames[0];
+    if (!sheetName)
+        return [];
     const sheet = wb.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
     if (json.length === 0)
@@ -186,8 +190,9 @@ function parseXlsx(buf) {
         const amount = parseAmount(row[headers[map.amount ?? -1]], warnings);
         const date = parseDate(row[headers[map.date ?? -1]], warnings);
         const currency = map.currency != null ? sanitizeCurrency(row[headers[map.currency]], warnings) : undefined;
-        const desc = resolveDescriptionObject(row, headers, map, warnings);
-        rows.push({ index: idx, include: true, amount, date, description: desc, currency, warnings });
+        const { description: desc, merchant: merchCaptured } = resolveDescriptionObject(row, headers, map, warnings);
+        const merchantVal = map.merchant != null ? (row[headers[map.merchant]] || '').toString().trim() || merchCaptured || null : (merchCaptured || null);
+        rows.push({ index: idx, include: true, amount, date, description: desc, merchant: merchantVal, currency, warnings });
     });
     return rows;
 }
@@ -196,11 +201,11 @@ function detectColumns(norm) {
     norm.forEach((h, i) => {
         if (map.amount == null && /^(amount|amt|total|value)$/.test(h))
             map.amount = i;
-        else if (map.date == null && /^(date|transactiondate|dt)$/.test(h))
+        else if (map.date == null && /^(date|transactiondate|posted|when|dt)$/.test(h))
             map.date = i;
-        else if (map.description == null && /^(description|desc|note|notes|memo)$/.test(h))
+        else if (map.description == null && /^(description|desc|note|notes|comment|comments|memo)$/.test(h))
             map.description = i;
-        else if (map.merchant == null && /^(merchant|vendor|store|place|shop)$/.test(h))
+        else if (map.merchant == null && /^(merchant|payee|vendor|store|where|place|shop)$/.test(h))
             map.merchant = i;
         else if (map.currency == null && /^(currency|curr|ccy)$/.test(h))
             map.currency = i;
@@ -286,38 +291,48 @@ function sanitizeCurrency(v, warnings) {
     return null;
 }
 function resolveDescription(cols, map, warnings) {
-    if (map.description != null)
-        return pick(cols, map.description);
-    if (map.merchant != null)
-        return pick(cols, map.merchant);
-    // fallback: first non-empty non amount/date cell
+    // Try explicit description column
+    let desc = map.description != null ? pick(cols, map.description) : '';
+    const merchant = map.merchant != null ? pick(cols, map.merchant) : '';
+    if (desc)
+        return { description: desc, merchant };
+    // If description column exists but empty, fallback to merchant if available
+    if (!desc && merchant) {
+        warnings.push('guessed-description');
+        return { description: merchant, merchant };
+    }
+    // Fallback: search other textual cells excluding amount/date/description/merchant
     for (let i = 0; i < cols.length; i++) {
-        if ([map.amount, map.date].includes(i))
+        if ([map.amount, map.date, map.description, map.merchant].includes(i))
             continue;
         const val = pick(cols, i);
         if (val) {
             warnings.push('guessed-description');
-            return val;
+            return { description: val, merchant };
         }
     }
     warnings.push('missing-description');
-    return '';
+    return { description: '', merchant };
 }
 function resolveDescriptionObject(row, headers, map, warnings) {
-    if (map.description != null)
-        return (row[headers[map.description]] || '').toString().trim();
-    if (map.merchant != null)
-        return (row[headers[map.merchant]] || '').toString().trim();
+    let desc = map.description != null ? (row[headers[map.description]] || '').toString().trim() : '';
+    const merchant = map.merchant != null ? (row[headers[map.merchant]] || '').toString().trim() : '';
+    if (desc)
+        return { description: desc, merchant };
+    if (!desc && merchant) {
+        warnings.push('guessed-description');
+        return { description: merchant, merchant };
+    }
     for (let i = 0; i < headers.length; i++) {
-        if ([map.amount, map.date].includes(i))
+        if ([map.amount, map.date, map.description, map.merchant].includes(i))
             continue;
         const val = (row[headers[i]] || '').toString().trim();
         if (val) {
             warnings.push('guessed-description');
-            return val;
+            return { description: val, merchant };
         }
     }
     warnings.push('missing-description');
-    return '';
+    return { description: '', merchant };
 }
 //# sourceMappingURL=importSpreadsheet.js.map
