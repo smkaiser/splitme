@@ -33,9 +33,10 @@ functions_1.app.http('toggleTripLock', {
             if (!tripId)
                 return { status: 404, jsonBody: { error: 'not found' } };
             let ownerId;
+            let metaEntity;
             try {
-                const meta = await client.getEntity(tripId, 'meta');
-                ownerId = meta.ownerId;
+                metaEntity = await client.getEntity(tripId, 'meta');
+                ownerId = metaEntity.ownerId;
                 if (ownerId && ownerId !== user.id) {
                     return { status: 403, jsonBody: { error: 'forbidden' } };
                 }
@@ -60,14 +61,27 @@ functions_1.app.http('toggleTripLock', {
             }
             const now = (0, tableClient_1.nowIso)();
             try {
-                await client.upsertEntity({ partitionKey: tripId, rowKey: 'meta', locked: desiredLocked, updatedAt: now }, 'Merge');
+                await client.upsertEntity({
+                    partitionKey: tripId,
+                    rowKey: 'meta',
+                    ...(metaEntity ?? {}),
+                    locked: desiredLocked,
+                    updatedAt: now
+                }, 'Merge');
             }
             catch (err) {
                 ctx.log(`failed to update meta lock state: ${err}`);
                 return { status: 500, jsonBody: { error: 'failed to update lock state' } };
             }
             try {
-                await client.upsertEntity({ partitionKey: 'slug', rowKey: slug, locked: desiredLocked, updatedAt: now }, 'Merge');
+                const slugEntity = await client.getEntity('slug', slug);
+                await client.upsertEntity({
+                    partitionKey: 'slug',
+                    rowKey: slug,
+                    ...slugEntity,
+                    locked: desiredLocked,
+                    updatedAt: now
+                }, 'Merge');
             }
             catch (err) {
                 ctx.log(`failed to update slug lock state: ${err}`);
