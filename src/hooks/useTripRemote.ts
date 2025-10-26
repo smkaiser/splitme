@@ -18,10 +18,26 @@ interface RemoteState {
   loading: boolean
   error: string | null
   refreshing: boolean
+  locked: boolean
+  ownerId: string | null
+  ownerName: string | null
+  ownerProvider: string | null
+  tripName: string | null
 }
 
 export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptions) {
-  const [state, setState] = useState<RemoteState>({ participants: [], expenses: [], loading: true, error: null, refreshing: false })
+  const [state, setState] = useState<RemoteState>({
+    participants: [],
+    expenses: [],
+    loading: true,
+    error: null,
+    refreshing: false,
+    locked: false,
+    ownerId: null,
+    ownerName: null,
+    ownerProvider: null,
+    tripName: null
+  })
 
   const fetchAll = useCallback(async () => {
     setState(s => ({ ...s, refreshing: true }))
@@ -29,7 +45,19 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}`, { credentials: 'include' })
       if (!res.ok) throw new Error(`Fetch failed (${res.status})`)
       const data = await res.json()
-      setState(s => ({ ...s, participants: data.participants || [], expenses: data.expenses || [], loading: false, error: null, refreshing: false }))
+      setState(s => ({
+        ...s,
+        participants: data.participants || [],
+        expenses: data.expenses || [],
+        loading: false,
+        error: null,
+        refreshing: false,
+        locked: Boolean(data.locked),
+        ownerId: data.ownerId ?? null,
+        ownerName: data.ownerName ?? null,
+        ownerProvider: data.ownerProvider ?? null,
+        tripName: data.name ?? s.tripName
+      }))
     } catch (e: any) {
       setState(s => ({ ...s, error: e.message || 'error', loading: false, refreshing: false }))
     }
@@ -39,6 +67,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
 
   // Helpers
   async function createParticipant(name: string) {
+    if (state.locked) throw new Error('Trip is locked. Unlock to make changes.')
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,6 +81,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   }
 
   async function deleteParticipant(id: string) {
+    if (state.locked) throw new Error('Trip is locked. Unlock to make changes.')
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       credentials: 'include'
@@ -64,6 +94,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   }
 
   async function createExpense(expense: Omit<Expense, 'id' | 'createdAt'>) {
+    if (state.locked) throw new Error('Trip is locked. Unlock to make changes.')
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,6 +115,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   }
 
   async function updateExpense(id: string, patch: Partial<Omit<Expense, 'id' | 'createdAt'>>) {
+    if (state.locked) throw new Error('Trip is locked. Unlock to make changes.')
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -97,6 +129,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   }
 
   async function deleteExpense(id: string) {
+    if (state.locked) throw new Error('Trip is locked. Unlock to make changes.')
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, {
       method: 'DELETE',
       credentials: 'include'
@@ -108,6 +141,22 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     throw new Error(await safeErr(res))
   }
 
+  async function toggleLock(nextLocked: boolean) {
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/lock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locked: nextLocked }),
+      credentials: 'include'
+    })
+    if (res.status === 403) {
+      throw new Error('Only the trip owner can change the lock state')
+    }
+    if (!res.ok) throw new Error(await safeErr(res))
+    const data = await res.json()
+    setState(s => ({ ...s, locked: Boolean(data.locked), refreshing: false }))
+    return Boolean(data.locked)
+  }
+
   return {
     ...state,
     refresh: fetchAll,
@@ -115,7 +164,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     deleteParticipant,
     createExpense,
     updateExpense,
-    deleteExpense
+    deleteExpense,
+    toggleLock
   }
 }
 

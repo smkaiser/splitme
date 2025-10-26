@@ -63,6 +63,10 @@ functions_1.app.http('importSpreadsheet', {
                 return { status: 404, jsonBody: { error: 'trip not found' } };
             // Validate paidBy is an existing participant
             const rows = await (0, tableClient_1.listTripRows)(client, tripId);
+            const meta = rows.find(r => r.rowKey === 'meta');
+            if (meta && meta.locked) {
+                return { status: 423, jsonBody: { error: 'trip locked' } };
+            }
             const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => r.participantId));
             if (!participantIds.has(body.paidBy))
                 return { status: 400, jsonBody: { error: 'paidBy participant not found' } };

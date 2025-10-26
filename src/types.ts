@@ -6,6 +6,7 @@ export interface Trip {
   ownerId?: string | null
   ownerName?: string | null
   ownerProvider?: string | null
+  locked?: boolean
 }
 
 export type TripKV = Trip[];

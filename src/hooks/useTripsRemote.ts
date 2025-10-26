@@ -33,7 +33,8 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
         createdAt: t.createdAt,
         ownerId: t.ownerId ?? null,
         ownerName: t.ownerName ?? null,
-        ownerProvider: t.ownerProvider ?? null
+        ownerProvider: t.ownerProvider ?? null,
+        locked: Boolean(t.locked)
       }))
       setState(s => ({ ...s, trips, loading: false, error: null, requiresAuth: false }))
     } catch (e: any) {
@@ -65,7 +66,8 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
     createdAt: data.createdAt,
     ownerId: data.ownerId ?? null,
     ownerName: data.ownerName ?? null,
-    ownerProvider: data.ownerProvider ?? null
+    ownerProvider: data.ownerProvider ?? null,
+    locked: Boolean(data.locked)
   }
   setState(s => ({ ...s, trips: [newTrip, ...s.trips], creating: false, requiresAuth: false }))
   return { trip: newTrip }

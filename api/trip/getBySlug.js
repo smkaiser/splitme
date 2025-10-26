@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const functions_1 = require("@azure/functions");
 const tableClient_1 = require("../shared/tableClient");
+const auth_1 = require("../shared/auth");
 functions_1.app.http('getTripBySlug', {
     methods: ['GET'],
     authLevel: 'anonymous',
@@ -11,6 +12,8 @@ functions_1.app.http('getTripBySlug', {
         const slug = req.params?.slug || '';
         if (!slug)
             return { status: 400, jsonBody: { error: 'slug required' } };
+        const principal = (0, auth_1.getClientPrincipal)(req);
+        const user = (0, auth_1.isAuthenticated)(principal) ? (0, auth_1.getAuthenticatedUser)(principal) : null;
         try {
             const client = (0, tableClient_1.getTableClient)();
             const tripId = await (0, tableClient_1.getTripIdBySlug)(client, slug);
@@ -20,6 +23,11 @@ functions_1.app.http('getTripBySlug', {
             const meta = rows.find(r => r.rowKey === 'meta');
             if (!meta)
                 return { status: 500, jsonBody: { error: 'trip corrupt' } };
+            const ownerId = meta.ownerId ?? null;
+            const ownerName = meta.ownerName ?? null;
+            const ownerProvider = meta.ownerProvider ?? null;
+            const locked = !!meta.locked;
+            const isOwner = !!(user && ownerId && user.id === ownerId);
             const participants = rows.filter(r => r.type === 'participant').map(r => ({
                 id: r.participantId,
                 name: r.name,
@@ -44,7 +52,12 @@ functions_1.app.http('getTripBySlug', {
                     participants,
                     expenses,
                     createdAt: meta.createdAt,
-                    updatedAt: meta.updatedAt
+                    updatedAt: meta.updatedAt,
+                    locked,
+                    ownerId,
+                    ownerName,
+                    ownerProvider,
+                    isOwner
                 } };
         }
         catch (e) {

@@ -31,6 +31,7 @@ app.http('trips', {
           let ownerId: string | undefined = (ent as any).ownerId
           let ownerName: string | undefined = (ent as any).ownerName
           let ownerProvider: string | undefined = (ent as any).ownerProvider
+          let locked: boolean | undefined = (ent as any).locked
           // If ownership metadata missing or does not match the current user, fall back to meta row
           if (!ownerId || ownerId !== user.id || !name || !createdAt) {
             try {
@@ -43,6 +44,7 @@ app.http('trips', {
                 ownerId = (meta as any).ownerId || ownerId
                 ownerName = (meta as any).ownerName || ownerName
                 ownerProvider = (meta as any).ownerProvider || ownerProvider
+                if (typeof (meta as any).locked === 'boolean') locked = (meta as any).locked
               }
               // Only allow listing trips owned by this user (or unclaimed legacy trips)
               if (meta && (meta as any).ownerId && (meta as any).ownerId !== user.id) {
@@ -51,7 +53,7 @@ app.http('trips', {
             } catch {}
           }
           if (ownerId && ownerId !== user.id) continue
-          trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null })
+          trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null, locked: !!locked })
         }
         return { status: 200, jsonBody: { trips } }
       } catch (e: any) {
@@ -94,7 +96,8 @@ app.http('trips', {
         updatedAt: now,
         ownerId: user.id,
         ownerName: user.name,
-        ownerProvider: user.provider
+        ownerProvider: user.provider,
+        locked: false
       })
 
       // slug index row (store name for list endpoint)
@@ -106,10 +109,11 @@ app.http('trips', {
         createdAt: now,
         ownerId: user.id,
         ownerName: user.name,
-        ownerProvider: user.provider
+        ownerProvider: user.provider,
+        locked: false
       })
 
-  return { status: 201, jsonBody: { tripId, slug, name, createdAt: now, ownerId: user.id, ownerName: user.name, ownerProvider: user.provider } }
+  return { status: 201, jsonBody: { tripId, slug, name, createdAt: now, ownerId: user.id, ownerName: user.name, ownerProvider: user.provider, locked: false } }
     } catch (e: any) {
       ctx.error(e)
       return { status: e.status || 500, jsonBody: { error: e.message || 'internal error' } }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Trash, Plus } from '@phosphor-icons/react'
+import { Badge } from '@/components/ui/badge'
 
 export function TripsAdmin() {
   const { trips, loading, error: loadError, createTrip, deleteTrip, creating, requiresAuth } = useTripsRemote()
@@ -186,7 +187,12 @@ export function TripsAdmin() {
             <Card key={trip.id} className="group">
               <CardContent className="py-5 flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{trip.name}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-lg">{trip.name}</h3>
+                    {trip.locked && (
+                      <Badge variant="secondary">Locked</Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Created {new Date(trip.createdAt).toLocaleDateString()} • URL /t/{trip.slug}
                   </p>
