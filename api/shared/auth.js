@@ -15,9 +15,17 @@ function getClientPrincipal(req) {
         if (!parsed)
             return null;
         // normalise defaults
-        parsed.roles = Array.isArray(parsed.roles) ? parsed.roles : [];
-        parsed.claims = Array.isArray(parsed.claims) ? parsed.claims : [];
-        return parsed;
+        const rolesSource = Array.isArray(parsed.roles)
+            ? parsed.roles
+            : Array.isArray(parsed.userRoles)
+                ? parsed.userRoles
+                : [];
+        const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
+        return {
+            ...parsed,
+            roles: rolesSource,
+            claims
+        };
     }
     catch {
         return null;
