@@ -61,13 +61,12 @@ functions_1.app.http('toggleTripLock', {
             }
             const now = (0, tableClient_1.nowIso)();
             try {
-                await client.upsertEntity({
+                await client.updateEntity({
                     partitionKey: tripId,
                     rowKey: 'meta',
-                    ...(metaEntity ?? {}),
                     locked: desiredLocked,
                     updatedAt: now
-                }, 'Merge');
+                }, 'Merge', { etag: metaEntity?.etag ?? '*' });
             }
             catch (err) {
                 ctx.log(`failed to update meta lock state: ${err}`);
@@ -75,13 +74,12 @@ functions_1.app.http('toggleTripLock', {
             }
             try {
                 const slugEntity = await client.getEntity('slug', slug);
-                await client.upsertEntity({
+                await client.updateEntity({
                     partitionKey: 'slug',
                     rowKey: slug,
-                    ...slugEntity,
                     locked: desiredLocked,
                     updatedAt: now
-                }, 'Merge');
+                }, 'Merge', { etag: slugEntity.etag ?? '*' });
             }
             catch (err) {
                 ctx.log(`failed to update slug lock state: ${err}`);
