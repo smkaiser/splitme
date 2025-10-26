@@ -10,9 +10,10 @@ interface ExpenseCardProps {
   participants: Participant[]
   onEdit: () => void
   onDelete: (id: string) => void
+  readOnly?: boolean
 }
 
-export function ExpenseCard({ expense, participants, onEdit, onDelete }: ExpenseCardProps) {
+export function ExpenseCard({ expense, participants, onEdit, onDelete, readOnly = false }: ExpenseCardProps) {
   const payer = participants.find(p => p.id === expense.paidBy)
   const expenseParticipants = participants.filter(p => expense.participants.includes(p.id))
   const amountPerPerson = expense.amount / expense.participants.length
@@ -88,6 +89,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete }: Expense
                     size="sm"
                     onClick={onEdit}
                     className="h-8 w-8 p-0"
+                    disabled={readOnly}
                   >
                     <PencilSimple className="w-4 h-4" />
                   </Button>
@@ -103,6 +105,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete }: Expense
                     size="sm"
                     onClick={() => onDelete(expense.id)}
                     className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    disabled={readOnly}
                   >
                     <Trash className="w-4 h-4" />
                   </Button>

@@ -38,7 +38,7 @@ function RemoteTripLoader({ slug }: { slug: string }) {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch(`/api/trips/${encodeURIComponent(slug)}`)
+  const res = await fetch(`/api/trips/${encodeURIComponent(slug)}`, { credentials: 'include' })
         if (res.status === 404) { if (!cancelled) setStatus('notfound'); return }
         if (!res.ok) { if (!cancelled) setStatus('error'); return }
         const data = await res.json()

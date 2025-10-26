@@ -31,6 +31,7 @@ functions_1.app.http('trips', {
                     let ownerId = ent.ownerId;
                     let ownerName = ent.ownerName;
                     let ownerProvider = ent.ownerProvider;
+                    let locked = ent.locked;
                     // If ownership metadata missing or does not match the current user, fall back to meta row
                     if (!ownerId || ownerId !== user.id || !name || !createdAt) {
                         try {
@@ -43,6 +44,8 @@ functions_1.app.http('trips', {
                                 ownerId = meta.ownerId || ownerId;
                                 ownerName = meta.ownerName || ownerName;
                                 ownerProvider = meta.ownerProvider || ownerProvider;
+                                if (typeof meta.locked === 'boolean')
+                                    locked = meta.locked;
                             }
                             // Only allow listing trips owned by this user (or unclaimed legacy trips)
                             if (meta && meta.ownerId && meta.ownerId !== user.id) {
@@ -53,7 +56,7 @@ functions_1.app.http('trips', {
                     }
                     if (ownerId && ownerId !== user.id)
                         continue;
-                    trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null });
+                    trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null, locked: !!locked });
                 }
                 return { status: 200, jsonBody: { trips } };
             }
@@ -95,7 +98,8 @@ functions_1.app.http('trips', {
                 updatedAt: now,
                 ownerId: user.id,
                 ownerName: user.name,
-                ownerProvider: user.provider
+                ownerProvider: user.provider,
+                locked: false
             });
             // slug index row (store name for list endpoint)
             await client.createEntity({
@@ -106,9 +110,10 @@ functions_1.app.http('trips', {
                 createdAt: now,
                 ownerId: user.id,
                 ownerName: user.name,
-                ownerProvider: user.provider
+                ownerProvider: user.provider,
+                locked: false
             });
-            return { status: 201, jsonBody: { tripId, slug, name, createdAt: now, ownerId: user.id, ownerName: user.name, ownerProvider: user.provider } };
+            return { status: 201, jsonBody: { tripId, slug, name, createdAt: now, ownerId: user.id, ownerName: user.name, ownerProvider: user.provider, locked: false } };
         }
         catch (e) {
             ctx.error(e);

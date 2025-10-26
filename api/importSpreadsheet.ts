@@ -38,6 +38,10 @@ app.http('importSpreadsheet', {
       if (!tripId) return { status: 404, jsonBody: { error: 'trip not found' } }
       // Validate paidBy is an existing participant
       const rows = await listTripRows(client, tripId)
+      const meta = rows.find(r => r.rowKey === 'meta') as any
+      if (meta && meta.locked) {
+        return { status: 423, jsonBody: { error: 'trip locked' } }
+      }
       const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => (r as any).participantId))
       if (!participantIds.has(body.paidBy)) return { status: 400, jsonBody: { error: 'paidBy participant not found' } }
 

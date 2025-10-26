@@ -45,6 +45,10 @@ functions_1.app.http('createExpense', {
             if (!tripId)
                 return { status: 404, jsonBody: { error: 'not found' } };
             const rows = await (0, tableClient_1.listTripRows)(client, tripId);
+            const meta = rows.find(r => r.rowKey === 'meta');
+            if (meta && meta.locked) {
+                return { status: 423, jsonBody: { error: 'trip locked' } };
+            }
             // Public mode: no auth required
             const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => r.participantId));
             if (!participantIds.has(body.paidBy))

@@ -11,6 +11,7 @@ export interface ClientPrincipal {
   identityProvider: string
   claims: ClientPrincipalClaim[]
   roles: string[]
+  userRoles?: string[]
 }
 
 export function getClientPrincipal(req: HttpRequest): ClientPrincipal | null {
@@ -19,12 +20,20 @@ export function getClientPrincipal(req: HttpRequest): ClientPrincipal | null {
   try {
     const decoded = Buffer.from(header, 'base64').toString('utf8')
     if (!decoded) return null
-    const parsed = JSON.parse(decoded)
+    const parsed = JSON.parse(decoded) as ClientPrincipal
     if (!parsed) return null
     // normalise defaults
-    parsed.roles = Array.isArray(parsed.roles) ? parsed.roles : []
-    parsed.claims = Array.isArray(parsed.claims) ? parsed.claims : []
-    return parsed as ClientPrincipal
+    const rolesSource = Array.isArray(parsed.roles)
+      ? parsed.roles
+      : Array.isArray(parsed.userRoles)
+        ? parsed.userRoles
+        : []
+    const claims = Array.isArray(parsed.claims) ? parsed.claims : []
+    return {
+      ...parsed,
+      roles: rolesSource,
+      claims
+    }
   } catch {
     return null
   }

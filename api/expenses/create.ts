@@ -35,6 +35,10 @@ app.http('createExpense', {
       const tripId = await getTripIdBySlug(client, slug)
       if (!tripId) return { status: 404, jsonBody: { error: 'not found' } }
       const rows = await listTripRows(client, tripId)
+      const meta = rows.find(r => r.rowKey === 'meta') as any
+      if (meta && meta.locked) {
+        return { status: 423, jsonBody: { error: 'trip locked' } }
+      }
   // Public mode: no auth required
       const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => r.participantId))
       if (!participantIds.has(body.paidBy)) return { status: 400, jsonBody: { error: 'paidBy participant not found' } }

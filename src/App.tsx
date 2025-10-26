@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { Toaster } from 'sonner'
-import { PlusIcon, ReceiptIcon, UsersIcon, CalculatorIcon, DownloadIcon, GridNineIcon } from '@phosphor-icons/react'
+import { Toaster, toast } from 'sonner'
+import { PlusIcon, ReceiptIcon, UsersIcon, CalculatorIcon, DownloadIcon, GridNineIcon, LockSimple, LockSimpleOpen } from '@phosphor-icons/react'
 import { AddExpenseDialog } from '@/components/AddExpenseDialog'
 import { EditExpenseDialog } from '@/components/EditExpenseDialog'
 import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
@@ -38,7 +38,22 @@ export interface Expense {
 interface AppProps { tripSlug: string; tripName?: string }
 
 function App({ tripSlug, tripName }: AppProps) {
-  const { participants, expenses, loading, error, createParticipant, deleteParticipant, createExpense, updateExpense, deleteExpense } = useTripRemote({ tripSlug })
+  const {
+    participants,
+    expenses,
+    loading,
+    error,
+    createParticipant,
+    deleteParticipant,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+    locked,
+    ownerId,
+    ownerName,
+    toggleLock,
+    tripName: remoteTripName
+  } = useTripRemote({ tripSlug })
   const { user, loading: authLoading, login, logout } = useAuth()
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [showEditExpense, setShowEditExpense] = useState(false)
@@ -47,11 +62,20 @@ function App({ tripSlug, tripName }: AppProps) {
   const [activeTab, setActiveTab] = useState<'expenses' | 'settlements'>('expenses')
   const [isExporting, setIsExporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
+  const [lockBusy, setLockBusy] = useState(false)
 
+  const displayTripName = remoteTripName || tripName
+  const isOwner = Boolean(user && ownerId && user.id === ownerId)
+
+  const readOnly = Boolean(locked)
   const settlements = calculateSettlements(expenses || [], participants || [])
   const totalExpenses = (expenses || []).reduce((sum, expense) => sum + expense.amount, 0)
 
   const handleEditExpense = (expense: Expense) => {
+    if (readOnly) {
+      toast.error('Trip is locked. Unlock to edit expenses.')
+      return
+    }
     setExpenseToEdit(expense)
     setShowEditExpense(true)
   }
@@ -75,18 +99,36 @@ function App({ tripSlug, tripName }: AppProps) {
   }
 
   const handleUpdateExpense = async (updatedExpense: Expense) => {
-    await updateExpense(updatedExpense.id, {
-      description: updatedExpense.description,
-      amount: updatedExpense.amount,
-      date: updatedExpense.date,
-      place: updatedExpense.place,
-      paidBy: updatedExpense.paidBy,
-      participants: updatedExpense.participants
-    })
+    try {
+      await updateExpense(updatedExpense.id, {
+        description: updatedExpense.description,
+        amount: updatedExpense.amount,
+        date: updatedExpense.date,
+        place: updatedExpense.place,
+        paidBy: updatedExpense.paidBy,
+        participants: updatedExpense.participants
+      })
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to update expense')
+    }
   }
 
   const handleProviderLogin = (providerId: string) => {
     login(providerId, window.location.href)
+  }
+
+  const handleToggleLock = async () => {
+    if (!isOwner) return
+    setLockBusy(true)
+    try {
+      const nextLocked = !readOnly
+      await toggleLock(nextLocked)
+      toast.success(nextLocked ? 'Trip locked' : 'Trip unlocked')
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to update lock state')
+    } finally {
+      setLockBusy(false)
+    }
   }
 
   return (
@@ -121,7 +163,27 @@ function App({ tripSlug, tripName }: AppProps) {
         </div>
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">{tripName || 'Trip'} • SplitMe</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">{displayTripName || 'Trip'}</h1>
+          <div className="flex flex-wrap items-center gap-3 justify-center mb-2">
+            <Badge variant={readOnly ? 'destructive' : 'secondary'}>
+              {readOnly ? 'Locked (read-only)' : 'Unlocked'}
+            </Badge>
+            {isOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggleLock}
+                disabled={lockBusy}
+                className="gap-2"
+              >
+                {readOnly ? <LockSimpleOpen className="w-4 h-4" /> : <LockSimple className="w-4 h-4" />}
+                {lockBusy ? 'Updating…' : readOnly ? 'Unlock trip' : 'Lock trip'}
+              </Button>
+            )}
+          </div>
+          {readOnly && !isOwner && ownerName && (
+            <p className="text-sm text-muted-foreground mb-1">Locked by {ownerName}</p>
+          )}
           <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <button className="underline hover:no-underline" onClick={() => { window.location.href='/' }}>All Trips</button></p>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
@@ -152,7 +214,13 @@ function App({ tripSlug, tripName }: AppProps) {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
           <Button
-            onClick={() => setShowAddExpense(true)}
+            onClick={() => {
+              if (readOnly) {
+                toast.error('Trip is locked. Unlock to add expenses.')
+                return
+              }
+              setShowAddExpense(true)
+            }}
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
             size="lg"
             
@@ -162,7 +230,13 @@ function App({ tripSlug, tripName }: AppProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setShowImport(true)}
+            onClick={() => {
+              if (readOnly) {
+                toast.error('Trip is locked. Unlock to import data.')
+                return
+              }
+              setShowImport(true)
+            }}
             size="lg"
           >
             <GridNineIcon className="w-5 h-5 mr-2" />
@@ -170,7 +244,13 @@ function App({ tripSlug, tripName }: AppProps) {
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => setShowManageParticipants(true)}
+            onClick={() => {
+              if (readOnly) {
+                toast.error('Trip is locked. Unlock to manage friends.')
+                return
+              }
+              setShowManageParticipants(true)
+            }}
             size="lg"
             
           >
@@ -236,7 +316,13 @@ function App({ tripSlug, tripName }: AppProps) {
                     Start by adding your first shared expense from your trip
                   </p>
                   <Button 
-                    onClick={() => setShowAddExpense(true)}
+                    onClick={() => {
+                      if (readOnly) {
+                        toast.error('Trip is locked. Unlock to add expenses.')
+                        return
+                      }
+                      setShowAddExpense(true)
+                    }}
                     className="bg-accent hover:bg-accent/90 text-accent-foreground"
                     
                   >
@@ -254,7 +340,18 @@ function App({ tripSlug, tripName }: AppProps) {
                     expense={expense}
                     participants={participants || []}
                     onEdit={() => handleEditExpense(expense)}
-                    onDelete={async (id) => { await deleteExpense(id) }}
+                    onDelete={async (id) => {
+                      if (readOnly) {
+                        toast.error('Trip is locked. Unlock to delete expenses.')
+                        return
+                      }
+                      try {
+                        await deleteExpense(id)
+                      } catch (e: any) {
+                        toast.error(e?.message || 'Failed to delete expense')
+                      }
+                    }}
+                    readOnly={readOnly}
                   />
                 ))
             )}
@@ -290,14 +387,18 @@ function App({ tripSlug, tripName }: AppProps) {
           participants={participants || []}
           onAddExpense={async (expense) => {
             // Create expense remotely (ignore local id fields, server returns canonical object)
-            await createExpense({
-              amount: expense.amount,
-              date: expense.date,
-              place: expense.place,
-              description: expense.description,
-              paidBy: expense.paidBy,
-              participants: expense.participants
-            })
+            try {
+              await createExpense({
+                amount: expense.amount,
+                date: expense.date,
+                place: expense.place,
+                description: expense.description,
+                paidBy: expense.paidBy,
+                participants: expense.participants
+              })
+            } catch (e: any) {
+              toast.error(e?.message || 'Failed to add expense')
+            }
           }}
         />
 
@@ -314,20 +415,37 @@ function App({ tripSlug, tripName }: AppProps) {
           onOpenChange={setShowManageParticipants}
           participants={participants || []}
           expenses={expenses || []}
-          remoteCreate={async (name: string) => { await createParticipant(name) }}
+          remoteCreate={async (name: string) => {
+            try {
+              await createParticipant(name)
+            } catch (e: any) {
+              toast.error(e?.message || 'Failed to add friend')
+              throw e
+            }
+          }}
           remoteDelete={async (participant, updatedExpenses) => {
             // Update each affected expense first (remove participant references)
             const existingMap = new Map((expenses || []).map(e => [e.id, e]))
             for (const updated of updatedExpenses) {
               const orig = existingMap.get(updated.id)
               if (orig && (orig.participants.join(',') !== updated.participants.join(',') || orig.paidBy !== updated.paidBy)) {
-                await updateExpense(updated.id, {
-                  participants: updated.participants,
-                  paidBy: updated.paidBy
-                })
+                try {
+                  await updateExpense(updated.id, {
+                    participants: updated.participants,
+                    paidBy: updated.paidBy
+                  })
+                } catch (e: any) {
+                  toast.error(e?.message || 'Failed to update expense')
+                  throw e
+                }
               }
             }
-            await deleteParticipant(participant.id)
+            try {
+              await deleteParticipant(participant.id)
+            } catch (e: any) {
+              toast.error(e?.message || 'Failed to remove friend')
+              throw e
+            }
           }}
         />
         <ImportSpreadsheetDialog
@@ -337,7 +455,12 @@ function App({ tripSlug, tripName }: AppProps) {
           participants={participants || []}
           onImported={() => { /* refresh already implicit via createExpense which mutates state */ }}
           createExpense={async ({ amount, date, place, description, paidBy, participants }) => {
-            await createExpense({ amount, date, place, description, paidBy, participants })
+            try {
+              await createExpense({ amount, date, place, description, paidBy, participants })
+            } catch (e: any) {
+              toast.error(e?.message || 'Failed to add imported expense')
+              throw e
+            }
           }}
         />
         </div>

@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { getTableClient, getTripIdBySlug, listTripRows } from '../shared/tableClient'
+import { getClientPrincipal, getAuthenticatedUser, isAuthenticated } from '../shared/auth'
 
 app.http('getTripBySlug', {
   methods: ['GET'],
@@ -7,8 +8,10 @@ app.http('getTripBySlug', {
   route: 'trips/{slug}',
   handler: async (req: HttpRequest, ctx: InvocationContext): Promise<HttpResponseInit> => {
   // In v4 programming model, route params available via req.params
-  const slug = (req as any).params?.slug || ''
+    const slug = (req as any).params?.slug || ''
     if (!slug) return { status: 400, jsonBody: { error: 'slug required' } }
+    const principal = getClientPrincipal(req)
+    const user = isAuthenticated(principal) ? getAuthenticatedUser(principal) : null
     try {
       const client = getTableClient()
       const tripId = await getTripIdBySlug(client, slug)
@@ -17,6 +20,12 @@ app.http('getTripBySlug', {
       const rows = await listTripRows(client, tripId)
       const meta = rows.find(r => r.rowKey === 'meta')
       if (!meta) return { status: 500, jsonBody: { error: 'trip corrupt' } }
+
+      const ownerId = (meta as any).ownerId ?? null
+      const ownerName = (meta as any).ownerName ?? null
+      const ownerProvider = (meta as any).ownerProvider ?? null
+      const locked = !!(meta as any).locked
+      const isOwner = !!(user && ownerId && user.id === ownerId)
 
       const participants = rows.filter(r => r.type === 'participant').map(r => ({
         id: r.participantId,
@@ -44,7 +53,12 @@ app.http('getTripBySlug', {
         participants,
         expenses,
         createdAt: meta.createdAt,
-        updatedAt: meta.updatedAt
+        updatedAt: meta.updatedAt,
+        locked,
+        ownerId,
+        ownerName,
+        ownerProvider,
+        isOwner
       }}
     } catch (e: any) {
       ctx.error(e)

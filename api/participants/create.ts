@@ -16,6 +16,10 @@ app.http('createParticipant', {
       const tripId = await getTripIdBySlug(client, slug)
       if (!tripId) return { status: 404, jsonBody: { error: 'not found' } }
       const rows = await listTripRows(client, tripId)
+      const meta = rows.find(r => r.rowKey === 'meta') as any
+      if (meta && meta.locked) {
+        return { status: 423, jsonBody: { error: 'trip locked' } }
+      }
   // Public mode: no auth required
 
       const participantId = newId()
