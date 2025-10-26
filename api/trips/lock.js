@@ -60,14 +60,14 @@ functions_1.app.http('toggleTripLock', {
             }
             const now = (0, tableClient_1.nowIso)();
             try {
-                await client.updateEntity({ partitionKey: tripId, rowKey: 'meta', locked: desiredLocked, updatedAt: now }, 'Merge');
+                await client.upsertEntity({ partitionKey: tripId, rowKey: 'meta', locked: desiredLocked, updatedAt: now }, 'Merge');
             }
             catch (err) {
                 ctx.log(`failed to update meta lock state: ${err}`);
                 return { status: 500, jsonBody: { error: 'failed to update lock state' } };
             }
             try {
-                await client.updateEntity({ partitionKey: 'slug', rowKey: slug, locked: desiredLocked, updatedAt: now }, 'Merge');
+                await client.upsertEntity({ partitionKey: 'slug', rowKey: slug, locked: desiredLocked, updatedAt: now }, 'Merge');
             }
             catch (err) {
                 ctx.log(`failed to update slug lock state: ${err}`);
