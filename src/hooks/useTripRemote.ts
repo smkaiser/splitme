@@ -26,7 +26,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   const fetchAll = useCallback(async () => {
     setState(s => ({ ...s, refreshing: true }))
     try {
-      const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}`)
+  const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}`, { credentials: 'include' })
       if (!res.ok) throw new Error(`Fetch failed (${res.status})`)
       const data = await res.json()
       setState(s => ({ ...s, participants: data.participants || [], expenses: data.expenses || [], loading: false, error: null, refreshing: false }))
@@ -42,7 +42,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name }),
+      credentials: 'include'
     })
     if (!res.ok) throw new Error(await safeErr(res))
     const p = await res.json()
@@ -51,7 +52,10 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   }
 
   async function deleteParticipant(id: string) {
-    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/participants/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
     if (res.status === 204) {
       setState(s => ({ ...s, participants: s.participants.filter(p => p.id !== id), expenses: s.expenses.filter(e => !e.participants.includes(id) && e.paidBy !== id) }))
       return
@@ -70,7 +74,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
         description: expense.description,
         paidBy: expense.paidBy,
         participants: expense.participants
-      })
+      }),
+      credentials: 'include'
     })
     if (!res.ok) throw new Error(await safeErr(res))
     const e = await res.json()
@@ -82,7 +87,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch)
+      body: JSON.stringify(patch),
+      credentials: 'include'
     })
     if (!res.ok) throw new Error(await safeErr(res))
     const updated = await res.json()
@@ -91,7 +97,10 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
   }
 
   async function deleteExpense(id: string) {
-    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/expenses/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
     if (res.status === 204) {
       setState(s => ({ ...s, expenses: s.expenses.filter(e => e.id !== id) }))
       return

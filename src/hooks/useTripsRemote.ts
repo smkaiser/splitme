@@ -19,7 +19,7 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
   const load = useCallback(async () => {
     setState(s => ({ ...s, loading: true, error: null }))
     try {
-      const res = await fetch(`${baseUrl}/trips`)
+  const res = await fetch(`${baseUrl}/trips`, { credentials: 'include' })
       if (res.status === 401) {
         setState(s => ({ ...s, loading: false, trips: [], requiresAuth: true, error: null }))
         return
@@ -46,7 +46,12 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
   async function createTrip(name: string) {
     setState(s => ({ ...s, creating: true }))
     try {
-      const res = await fetch(`${baseUrl}/trips`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const res = await fetch(`${baseUrl}/trips`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+        credentials: 'include'
+      })
       if (res.status === 401) {
         setState(s => ({ ...s, creating: false, requiresAuth: true }))
         throw new Error('Authentication required to create trips')
@@ -71,7 +76,10 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
   }
 
   async function deleteTrip(slug: string) {
-    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(slug)}`, { method: 'DELETE' })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(slug)}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
     if (res.status === 401) {
       setState(s => ({ ...s, requiresAuth: true }))
       throw new Error('Authentication required to delete trips')
