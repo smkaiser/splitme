@@ -1,5 +1,6 @@
 {
   "routes": [
+    { "route": "/api/trips", "allowedRoles": ["authenticated"] },
     { "route": "/api/*", "allowedRoles": ["anonymous"] },
     { "route": "/t/*", "rewrite": "/index.html" },
     { "route": "/", "rewrite": "/index.html" },

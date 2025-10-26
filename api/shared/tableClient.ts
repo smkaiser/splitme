@@ -26,6 +26,9 @@ export interface TripMetaRow {
   slug: string
   createdAt: string
   updatedAt: string
+  ownerId?: string
+  ownerName?: string
+  ownerProvider?: string
 }
 
 export interface ParticipantRow {
@@ -57,6 +60,9 @@ export interface SlugIndexRow {
   partitionKey: string // 'slug'
   rowKey: string // slug
   tripId: string
+  ownerId?: string
+  ownerName?: string
+  ownerProvider?: string
 }
 
 export function newId() { return randomUUID() }
