@@ -1,6 +1,7 @@
 // Aggregator entrypoint for Azure Functions (code-first programming model)
 // Import each module so its app.http registrations run at startup.
 import './trips'
+import './trips/lock'
 import './trip/getBySlug'
 import './participants/create'
 import './participants/delete'
