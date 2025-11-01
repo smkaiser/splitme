@@ -19,7 +19,6 @@ export const AUTH_PROVIDERS = [
   { id: 'aad', label: 'Microsoft' },
   { id: 'google', label: 'Google' },
   { id: 'github', label: 'GitHub' },
-  { id: 'twitter', label: 'Twitter' },
   { id: 'facebook', label: 'Facebook' }
 ]
 

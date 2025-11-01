@@ -29,7 +29,6 @@ Trip creation and deletion now require a signed-in account. The app uses Azure S
 - Microsoft (Azure AD)
 - Google
 - GitHub
-- Twitter
 - Facebook
 
 You can enable additional providers in the Azure portal as needed—the frontend menu automatically exposes anything listed in `AUTH_PROVIDERS`.
