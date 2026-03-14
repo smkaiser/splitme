@@ -18,7 +18,7 @@ interface AuthState {
 export const AUTH_PROVIDERS = [
   { id: 'aad', label: 'Microsoft' },
   { id: 'google', label: 'Google' },
-  { id: 'github', label: 'GitHub' },
+  // { id: 'github', label: 'GitHub' },  // disabled for now
   { id: 'facebook', label: 'Facebook' }
 ]
 
