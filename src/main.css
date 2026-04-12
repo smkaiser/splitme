@@ -1,14 +1,8 @@
 @import 'tailwindcss';
 
-@import './styles/theme.css';
-@import './index.css';
 @import "tw-animate-css";
-/*
-  ---break---
-*/
-@custom-variant dark (&:is(.dark *));
 
-@config '../tailwind.config.js';
+@custom-variant dark (&:is(.dark *));
 
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
@@ -108,8 +102,7 @@
   ---break---
 */
 @theme inline {
-  /* Tailwind spacing scale token required for --spacing() usage */
-  --spacing: 0 0.125rem 0.25rem 0.375rem 0.5rem 0.75rem 1rem 1.5rem 2rem 3rem 4rem 6rem;
+  --spacing: 0.25rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -185,5 +178,7 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'tnum' 1;
   }
 }

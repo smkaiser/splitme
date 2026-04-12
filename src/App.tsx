@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 // Remote data hook replaces local KV storage
 import { useTripRemote } from './hooks/useTripRemote'
 import { Button } from '@/components/ui/button'
@@ -16,8 +16,8 @@ import { SettlementCard } from '@/components/SettlementCard'
 import { ImportSpreadsheetDialog } from '@/components/ImportSpreadsheetDialog'
 import { calculateSettlements } from '@/lib/settlements'
 import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
-import { AUTH_PROVIDERS, useAuth } from './hooks/useAuth'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { useAuth } from './hooks/useAuth'
+import { UserMenu } from '@/components/UserMenu'
 
 import type { Participant, Expense } from '@/types'
 export type { Participant, Expense }
@@ -25,7 +25,6 @@ export type { Participant, Expense }
 interface AppProps { tripSlug: string; tripName?: string }
 
 function App({ tripSlug, tripName }: AppProps) {
-  const navigate = useNavigate()
   const {
     participants,
     expenses,
@@ -42,7 +41,7 @@ function App({ tripSlug, tripName }: AppProps) {
     toggleLock,
     tripName: remoteTripName
   } = useTripRemote({ tripSlug })
-  const { user, loading: authLoading, login, logout } = useAuth()
+  const { user } = useAuth()
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [showEditExpense, setShowEditExpense] = useState(false)
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null)
@@ -101,11 +100,7 @@ function App({ tripSlug, tripName }: AppProps) {
     }
   }
 
-  const handleProviderLogin = (providerId: string) => {
-    login(providerId, window.location.href)
-  }
-
-  const handleToggleLock = async () => {
+  const handleToggleLock= async () => {
     if (!isOwner) return
     setLockBusy(true)
     try {
@@ -124,30 +119,7 @@ function App({ tripSlug, tripName }: AppProps) {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex justify-end items-center gap-3 mb-4">
-          {authLoading ? (
-            <span className="text-sm text-muted-foreground">Checking account…</span>
-          ) : user ? (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="hidden sm:inline">Signed in as {user.name}</span>
-              <Button variant="outline" size="sm" onClick={() => logout(window.location.href)}>Sign out</Button>
-            </div>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">Sign in</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {AUTH_PROVIDERS.map(provider => (
-                  <DropdownMenuItem key={provider.id} onClick={() => handleProviderLogin(provider.id)}>
-                    {provider.label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuItem onClick={() => { navigate('/') }}>
-                  More options…
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <UserMenu />
         </div>
         {/* Header */}
         <div className="text-center mb-8">
@@ -172,7 +144,7 @@ function App({ tripSlug, tripName }: AppProps) {
           {readOnly && !isOwner && ownerName && (
             <p className="text-sm text-muted-foreground mb-1">Locked by {ownerName}</p>
           )}
-          <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <Link className="underline hover:no-underline" to="/">All Trips</Link></p>
+          <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <Link className="underline hover:no-underline" to="/trips">All Trips</Link></p>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
         </div>

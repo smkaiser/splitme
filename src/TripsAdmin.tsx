@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trip } from './types'
 import { useTripsRemote } from './hooks/useTripsRemote'
-import { AUTH_PROVIDERS, useAuth } from './hooks/useAuth'
+import { useAuth } from './hooks/useAuth'
+import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 export function TripsAdmin() {
   const navigate = useNavigate()
   const { trips, loading, error: loadError, createTrip, deleteTrip, creating, requiresAuth } = useTripsRemote()
-  const { user, loading: authLoading, error: authError, login, logout } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [joinSlug, setJoinSlug] = useState('')
@@ -53,7 +54,7 @@ export function TripsAdmin() {
   const handleJoin = () => {
     const raw = joinSlug.trim()
     if (!raw) {
-      setJoinError('Enter a trip ID or slug')
+      setJoinError('Enter a trip ID')
       return
     }
     const normalized = raw
@@ -61,80 +62,44 @@ export function TripsAdmin() {
       .replace(/^t\//i, '')
       .replace(/\/$/, '')
     if (!normalized) {
-      setJoinError('Enter a valid trip slug')
+      setJoinError('Enter a valid trip ID')
       return
     }
     navigate(`/t/${encodeURIComponent(normalized)}`)
   }
 
-  const providerButtons = AUTH_PROVIDERS.map(provider => (
-    <Button
-      key={provider.id}
-      variant="outline"
-      className="justify-start"
-      onClick={() => login(provider.id, window.location.href)}
-    >
-      Continue with {provider.label}
-    </Button>
-  ))
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-10 max-w-3xl">
+        <div className="flex justify-end mb-4">
+          <UserMenu />
+        </div>
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Trips Admin</h1>
+          <h1 className="text-4xl font-bold mb-2">Your Trips</h1>
           {!user && requiresAuth && (
             <p className="text-sm text-muted-foreground mt-2">Sign in to create or manage trips.</p>
           )}
-          {authError && <p className="text-destructive text-sm mt-2">{authError}</p>}
           {loadError && !requiresAuth && (
             <p className="text-destructive text-sm mt-2">{loadError}</p>
           )}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Join a Trip</CardTitle>
-              <CardDescription>Enter a trip ID or slug to jump straight in.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input
-                placeholder="Trip slug (e.g. italy-2025)"
-                value={joinSlug}
-                onChange={e => { setJoinSlug(e.target.value); setJoinError(null) }}
-                onKeyDown={e => { if (e.key === 'Enter') handleJoin() }}
-              />
-              <Button onClick={handleJoin}>Open Trip</Button>
-              {joinError && <p className="text-destructive text-xs">{joinError}</p>}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{user ? 'Account' : 'Sign in'}</CardTitle>
-              <CardDescription>
-                {user ? `Signed in as ${user.name}` : 'Use a social or work identity to manage your trips.'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {user ? (
-                <div className="flex flex-col gap-3">
-                  <div className="text-sm text-muted-foreground">
-                    {user.email ? <div>{user.email}</div> : null}
-                    <div>Provider: {user.provider}</div>
-                  </div>
-                  <Button variant="outline" onClick={() => logout(window.location.href)}>Sign out</Button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {authLoading && <p className="text-sm text-muted-foreground">Checking session…</p>}
-                  {providerButtons}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Join a Trip</CardTitle>
+            <CardDescription>Enter a trip ID to jump straight in.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Trip ID (e.g. italy-2025)"
+              value={joinSlug}
+              onChange={e => { setJoinSlug(e.target.value); setJoinError(null) }}
+              onKeyDown={e => { if (e.key === 'Enter') handleJoin() }}
+            />
+            <Button onClick={handleJoin}>Open Trip</Button>
+            {joinError && <p className="text-destructive text-xs">{joinError}</p>}
+          </CardContent>
+        </Card>
 
         <Card className="mb-8">
           <CardHeader>

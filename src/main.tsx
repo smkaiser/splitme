@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom'
 
 import App from './App.tsx'
 import { TripsAdmin } from './TripsAdmin'
+import { LandingPage } from './components/LandingPage'
 import { useEffect, useState } from 'react'
 import { ErrorFallback } from './ErrorFallback.tsx'
 
@@ -54,7 +55,7 @@ function RemoteTripLoader() {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <h1 className="text-2xl font-bold">Trip Not Found</h1>
-        <p className="text-muted-foreground">No trip exists for slug "{slug}"</p>
+        <p className="text-muted-foreground">No trip exists for ID "{slug}"</p>
         <Link className="underline" to="/">Back to Trips</Link>
       </div>
     )
@@ -78,7 +79,8 @@ createRoot(document.getElementById('root')!).render(
   <ErrorBoundary FallbackComponent={ErrorFallback}>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<TripsAdmin />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/trips" element={<TripsAdmin />} />
         <Route path="/t/:slug" element={<RemoteTripLoader />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
