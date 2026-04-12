@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Plus, Trash, Users, Warning } from '@phosphor-icons/react'
-import { Participant, Expense } from '@/App'
+import type { Participant, Expense } from '@/types'
 import {
   AlertDialog,
   AlertDialogAction,

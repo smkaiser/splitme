@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { ArrowRight } from '@phosphor-icons/react'
 import { Settlement } from '@/lib/settlements'
-import { Participant } from '@/App'
+import type { Participant } from '@/types'
 
 interface SettlementCardProps {
   settlement: Settlement

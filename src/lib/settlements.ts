@@ -1,4 +1,4 @@
-import { Expense, Participant } from '@/App'
+import type { Expense, Participant } from '@/types'
 
 export interface Settlement {
   from: string

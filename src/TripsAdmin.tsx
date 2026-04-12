@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Trip } from './types'
 import { useTripsRemote } from './hooks/useTripsRemote'
 import { AUTH_PROVIDERS, useAuth } from './hooks/useAuth'
@@ -9,6 +10,7 @@ import { Trash, Plus } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
 
 export function TripsAdmin() {
+  const navigate = useNavigate()
   const { trips, loading, error: loadError, createTrip, deleteTrip, creating, requiresAuth } = useTripsRemote()
   const { user, loading: authLoading, error: authError, login, logout } = useAuth()
   const [name, setName] = useState('')
@@ -62,7 +64,7 @@ export function TripsAdmin() {
       setJoinError('Enter a valid trip slug')
       return
     }
-    window.location.href = `/t/${encodeURIComponent(normalized)}`
+    navigate(`/t/${encodeURIComponent(normalized)}`)
   }
 
   const providerButtons = AUTH_PROVIDERS.map(provider => (
@@ -198,7 +200,7 @@ export function TripsAdmin() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => { window.location.href = `/t/${trip.slug}` }}>Open</Button>
+                  <Button variant="outline" onClick={() => navigate(`/t/${trip.slug}`)}>Open</Button>
                   <Button variant="destructive" onClick={() => handleDelete(trip)} disabled={!user}>
                     <Trash className="w-4 h-4" />
                   </Button>

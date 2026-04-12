@@ -1,4 +1,4 @@
-import type { Expense, Participant } from '@/App'
+import type { Expense, Participant } from '@/types'
 import { toast } from 'sonner'
 
 export interface CSVExportOptions {

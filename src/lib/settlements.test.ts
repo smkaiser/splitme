@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { calculateSettlements } from './settlements'
-import type { Expense, Participant } from '@/App'
+import type { Expense, Participant } from '@/types'
 
 function makeParticipant(id: string, name: string): Participant {
   return { id, name }

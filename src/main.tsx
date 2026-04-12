@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from "react-error-boundary";
+import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom'
 
 import App from './App.tsx'
 import { TripsAdmin } from './TripsAdmin'
@@ -8,30 +9,22 @@ import { ErrorFallback } from './ErrorFallback.tsx'
 
 import "./main.css"
 
-function RootRouter() {
-  // Basic client-side routing using location pathname
-  const path = window.location.pathname
-  if (path === '/' || path === '') {
-    return <TripsAdmin />
-  }
-  const tripMatch = path.match(/^\/t\/([^/]+)\/?$/)
-  if (tripMatch) {
-    const slug = tripMatch[1]
-    return <RemoteTripLoader slug={slug} />
-  }
+function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center flex-col gap-4">
       <h1 className="text-2xl font-bold">404</h1>
       <p className="text-muted-foreground">Page not found</p>
-      <button className="underline" onClick={() => { window.location.href='/' }}>Home</button>
+      <Link className="underline" to="/">Home</Link>
     </div>
   )
 }
 
-function RemoteTripLoader({ slug }: { slug: string }) {
+function RemoteTripLoader() {
+  const { slug } = useParams<{ slug: string }>()
   const [trip, setTrip] = useState<{ name: string } | null>(null)
   const [status, setStatus] = useState<'loading' | 'notfound' | 'error' | 'ready'>('loading')
   useEffect(() => {
+    if (!slug) return
     let cancelled = false
     ;(async () => {
       try {
@@ -47,6 +40,8 @@ function RemoteTripLoader({ slug }: { slug: string }) {
     return () => { cancelled = true }
   }, [slug])
 
+  if (!slug) return <NotFound />
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
@@ -60,7 +55,7 @@ function RemoteTripLoader({ slug }: { slug: string }) {
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <h1 className="text-2xl font-bold">Trip Not Found</h1>
         <p className="text-muted-foreground">No trip exists for slug "{slug}"</p>
-        <button className="underline" onClick={() => { window.location.href='/' }}>Back to Trips</button>
+        <Link className="underline" to="/">Back to Trips</Link>
       </div>
     )
   }
@@ -71,7 +66,7 @@ function RemoteTripLoader({ slug }: { slug: string }) {
         <p className="text-muted-foreground">Could not load trip. Try again.</p>
         <div className="flex gap-2">
           <button className="underline" onClick={() => { window.location.reload() }}>Retry</button>
-          <button className="underline" onClick={() => { window.location.href='/' }}>Trips</button>
+          <Link className="underline" to="/">Trips</Link>
         </div>
       </div>
     )
@@ -81,6 +76,12 @@ function RemoteTripLoader({ slug }: { slug: string }) {
 
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary FallbackComponent={ErrorFallback}>
-    <RootRouter />
-   </ErrorBoundary>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<TripsAdmin />} />
+        <Route path="/t/:slug" element={<RemoteTripLoader />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  </ErrorBoundary>
 )

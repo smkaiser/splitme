@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { Participant, Expense } from '@/App'
+import type { Participant, Expense } from '@/types'
 import { getErrorMessage } from '@/lib/errors'
 
 // Minimal remote synchronization hook (skeleton)

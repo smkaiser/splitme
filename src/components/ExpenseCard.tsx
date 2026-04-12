@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { PencilSimple, Trash, MapPin, Calendar } from '@phosphor-icons/react'
-import { Expense, Participant } from '@/App'
+import type { Expense, Participant } from '@/types'
 
 interface ExpenseCardProps {
   expense: Expense

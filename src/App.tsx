@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 // Remote data hook replaces local KV storage
 import { useTripRemote } from './hooks/useTripRemote'
 import { Button } from '@/components/ui/button'
@@ -18,25 +19,13 @@ import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
 import { AUTH_PROVIDERS, useAuth } from './hooks/useAuth'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
-export interface Participant {
-  id: string
-  name: string
-}
-
-export interface Expense {
-  id: string
-  date: string
-  place: string
-  amount: number
-  description: string
-  paidBy: string
-  participants: string[]
-  createdAt: string
-}
+import type { Participant, Expense } from '@/types'
+export type { Participant, Expense }
 
 interface AppProps { tripSlug: string; tripName?: string }
 
 function App({ tripSlug, tripName }: AppProps) {
+  const navigate = useNavigate()
   const {
     participants,
     expenses,
@@ -153,7 +142,7 @@ function App({ tripSlug, tripName }: AppProps) {
                     {provider.label}
                   </DropdownMenuItem>
                 ))}
-                <DropdownMenuItem onClick={() => { window.location.href = '/' }}>
+                <DropdownMenuItem onClick={() => { navigate('/') }}>
                   More options…
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -183,7 +172,7 @@ function App({ tripSlug, tripName }: AppProps) {
           {readOnly && !isOwner && ownerName && (
             <p className="text-sm text-muted-foreground mb-1">Locked by {ownerName}</p>
           )}
-          <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <button className="underline hover:no-underline" onClick={() => { window.location.href='/' }}>All Trips</button></p>
+          <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <Link className="underline hover:no-underline" to="/">All Trips</Link></p>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
         </div>

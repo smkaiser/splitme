@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Expense, Participant } from '@/App'
+import type { Expense, Participant } from '@/types'
 import { ExpenseForm, ExpenseFormValues } from '@/components/ExpenseForm'
 
 interface EditExpenseDialogProps {
