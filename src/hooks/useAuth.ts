@@ -38,6 +38,9 @@ export function useAuth() {
       if (!res.ok) throw new Error(`/.auth/me failed (${res.status})`)
       const data = await res.json()
       const principal = data?.clientPrincipal ?? null
+      if (principal?.claims) {
+        console.debug('[auth] claims:', JSON.stringify(principal.claims))
+      }
       if (!principal || !principal.userId) {
         setState({ user: null, loading: false, error: null })
         return
@@ -47,7 +50,10 @@ export function useAuth() {
         name: getClaim(principal, 'name') || principal.userDetails || 'User',
         provider: principal.identityProvider,
         email: getClaim(principal, 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress') || null,
-        avatarUrl: getClaim(principal, 'picture') || null,
+        avatarUrl: getClaim(principal, 'picture')
+          || getClaim(principal, 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/picture')
+          || getClaim(principal, 'urn:google:picture')
+          || null,
         roles: Array.isArray(principal.roles) ? principal.roles : []
       }
       setState({ user, loading: false, error: null })
