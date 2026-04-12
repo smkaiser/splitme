@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Trip } from '@/types'
+import { getErrorMessage } from '@/lib/errors'
 
 interface UseTripsRemoteOptions {
   baseUrl?: string
@@ -57,7 +58,7 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
         setState(s => ({ ...s, creating: false, requiresAuth: true }))
         throw new Error('Authentication required to create trips')
       }
-      if (!res.ok) throw new Error(await errText(res))
+      if (!res.ok) throw new Error(await getErrorMessage(res))
   const data = await res.json()
   const newTrip: Trip = {
     id: data.tripId,
@@ -93,12 +94,8 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
       setState(s => ({ ...s, trips: s.trips.filter(t => t.slug !== slug) }))
       return
     }
-    throw new Error(await errText(res))
+    throw new Error(await getErrorMessage(res))
   }
 
   return { ...state, refresh: load, createTrip, deleteTrip }
-}
-
-async function errText(res: Response) {
-  try { const j = await res.json(); return j.error || JSON.stringify(j) } catch { return res.statusText }
 }

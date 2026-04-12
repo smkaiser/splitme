@@ -31,3 +31,7 @@ packages
 .devcontainer/
 
 .spark-workbench-id
+
+# Generated API build outputs (compiled from TypeScript)
+api/**/*.js
+api/**/*.js.map

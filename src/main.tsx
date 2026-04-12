@@ -3,13 +3,10 @@ import { ErrorBoundary } from "react-error-boundary";
 
 import App from './App.tsx'
 import { TripsAdmin } from './TripsAdmin'
-import { Trip } from './types'
 import { useEffect, useState } from 'react'
 import { ErrorFallback } from './ErrorFallback.tsx'
 
 import "./main.css"
-import "./styles/theme.css"
-import "./index.css"
 
 function RootRouter() {
   // Basic client-side routing using location pathname

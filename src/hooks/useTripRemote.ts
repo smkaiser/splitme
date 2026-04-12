@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { Participant, Expense } from '@/App'
+import { getErrorMessage } from '@/lib/errors'
 
 // Minimal remote synchronization hook (skeleton)
 // Responsibilities:
@@ -74,7 +75,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
       body: JSON.stringify({ name }),
       credentials: 'include'
     })
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) throw new Error(await getErrorMessage(res))
     const p = await res.json()
     setState(s => ({ ...s, participants: [...s.participants, p] }))
     return p
@@ -90,7 +91,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
       setState(s => ({ ...s, participants: s.participants.filter(p => p.id !== id), expenses: s.expenses.filter(e => !e.participants.includes(id) && e.paidBy !== id) }))
       return
     }
-    throw new Error(await safeErr(res))
+    throw new Error(await getErrorMessage(res))
   }
 
   async function createExpense(expense: Omit<Expense, 'id' | 'createdAt'>) {
@@ -108,7 +109,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
       }),
       credentials: 'include'
     })
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) throw new Error(await getErrorMessage(res))
     const e = await res.json()
     setState(s => ({ ...s, expenses: [...s.expenses, e] }))
     return e as Expense
@@ -122,7 +123,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
       body: JSON.stringify(patch),
       credentials: 'include'
     })
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) throw new Error(await getErrorMessage(res))
     const updated = await res.json()
     setState(s => ({ ...s, expenses: s.expenses.map(e => e.id === id ? { ...e, ...updated } : e) }))
     return updated as Expense
@@ -138,7 +139,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
       setState(s => ({ ...s, expenses: s.expenses.filter(e => e.id !== id) }))
       return
     }
-    throw new Error(await safeErr(res))
+    throw new Error(await getErrorMessage(res))
   }
 
   async function toggleLock(nextLocked: boolean) {
@@ -151,7 +152,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     if (res.status === 403) {
       throw new Error('Only the trip owner can change the lock state')
     }
-    if (!res.ok) throw new Error(await safeErr(res))
+    if (!res.ok) throw new Error(await getErrorMessage(res))
     const data = await res.json()
     setState(s => ({ ...s, locked: Boolean(data.locked), refreshing: false }))
     return Boolean(data.locked)
@@ -167,8 +168,4 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     deleteExpense,
     toggleLock
   }
-}
-
-async function safeErr(res: Response) {
-  try { const j = await res.json(); return j.error || JSON.stringify(j) } catch { return res.statusText }
 }

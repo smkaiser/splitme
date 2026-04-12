@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Participant } from '@/App'
+import { getErrorMessage } from '@/lib/errors'
 // Removed currency handling UI; assume USD implicitly. Added responsive scrollable layout.
 
 interface ParsedRow {
@@ -50,7 +51,7 @@ export function ImportSpreadsheetDialog({ open, onOpenChange, tripSlug, particip
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paidBy, fileName: file.name, fileContentBase64: base64 })
       })
-      if (!res.ok) throw new Error((await safeErr(res)))
+      if (!res.ok) throw new Error((await getErrorMessage(res)))
       const data = await res.json()
       setRows(data.rows || [])
       setStep(2)
@@ -212,8 +213,4 @@ function bufferToBase64(buf: Uint8Array) {
   let binary = ''
   for (let i=0;i<buf.length;i++) binary += String.fromCharCode(buf[i])
   return btoa(binary)
-}
-
-async function safeErr(res: Response) {
-  try { const j = await res.json(); return j.error || JSON.stringify(j) } catch { return res.statusText }
 }
