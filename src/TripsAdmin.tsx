@@ -84,6 +84,54 @@ export function TripsAdmin() {
           )}
         </div>
 
+        <div className="space-y-4 mb-8">
+          {requiresAuth && !user && (
+            <Card>
+              <CardContent className="py-6 text-center text-muted-foreground">
+                Sign in to see and manage your trips.
+              </CardContent>
+            </Card>
+          )}
+
+          {loading && (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">Loading trips...</CardContent>
+            </Card>
+          )}
+
+          {!loading && (!requiresAuth || !!user) && sortedTrips.length === 0 && (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No trips yet. Create your first trip below.
+              </CardContent>
+            </Card>
+          )}
+
+          {sortedTrips.map(trip => (
+            <Card key={trip.id} className="group">
+              <CardContent className="py-5 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-lg">{trip.name}</h3>
+                    {trip.locked && (
+                      <Badge variant="secondary">Locked</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Created {new Date(trip.createdAt).toLocaleDateString()} • URL /t/{trip.slug}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => navigate(`/t/${trip.slug}`)}>Open</Button>
+                  <Button variant="destructive" onClick={() => handleDelete(trip)} disabled={!user}>
+                    <Trash className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Join a Trip</CardTitle>
@@ -126,54 +174,6 @@ export function TripsAdmin() {
             )}
           </CardContent>
         </Card>
-
-        <div className="space-y-4">
-          {requiresAuth && !user && (
-            <Card>
-              <CardContent className="py-6 text-center text-muted-foreground">
-                Sign in to see and manage your trips.
-              </CardContent>
-            </Card>
-          )}
-
-          {loading && (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">Loading trips...</CardContent>
-            </Card>
-          )}
-
-          {!loading && (!requiresAuth || !!user) && sortedTrips.length === 0 && (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No trips yet. Create your first trip above.
-              </CardContent>
-            </Card>
-          )}
-
-          {sortedTrips.map(trip => (
-            <Card key={trip.id} className="group">
-              <CardContent className="py-5 flex flex-col md:flex-row md:items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-lg">{trip.name}</h3>
-                    {trip.locked && (
-                      <Badge variant="secondary">Locked</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Created {new Date(trip.createdAt).toLocaleDateString()} • URL /t/{trip.slug}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => navigate(`/t/${trip.slug}`)}>Open</Button>
-                  <Button variant="destructive" onClick={() => handleDelete(trip)} disabled={!user}>
-                    <Trash className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
     </div>
   )
