@@ -6,7 +6,7 @@ import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+
 
 export function LandingPage() {
   const navigate = useNavigate()
@@ -16,7 +16,9 @@ export function LandingPage() {
   const [error, setError] = useState<string | null>(null)
 
   const sortedTrips = useMemo(() => {
-    return (trips || []).slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    return (trips || [])
+      .filter(t => !t.locked)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [trips])
 
   const handleJoin = () => {
@@ -59,7 +61,6 @@ export function LandingPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium truncate">{trip.name}</span>
-                      {trip.locked && <Badge variant="secondary">Locked</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(trip.createdAt).toLocaleDateString()}
