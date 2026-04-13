@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useTripsRemote } from '@/hooks/useTripsRemote'
 import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 
 export function LandingPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { trips, loading: tripsLoading } = useTripsRemote()
   const [tripId, setTripId] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const sortedTrips = useMemo(() => {
+    return (trips || []).slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  }, [trips])
 
   const handleJoin = () => {
     const raw = tripId.trim()
@@ -42,6 +49,39 @@ export function LandingPage() {
             Split expenses with friends. No hassle, no math.
           </p>
         </div>
+
+        {user && sortedTrips.length > 0 && (
+          <div className="mb-8 space-y-3">
+            <h2 className="text-lg font-semibold">Your Trips</h2>
+            {sortedTrips.map(trip => (
+              <Card key={trip.id} className="group">
+                <CardContent className="py-4 flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium truncate">{trip.name}</span>
+                      {trip.locked && <Badge variant="secondary">Locked</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(trip.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/t/${trip.slug}`)}>
+                    Open
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+            <div className="text-right">
+              <Button variant="link" asChild size="sm">
+                <Link to="/trips">Manage all trips →</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {user && tripsLoading && (
+          <p className="text-sm text-muted-foreground text-center mb-8">Loading your trips…</p>
+        )}
 
         <Card className="mb-8">
           <CardHeader>
