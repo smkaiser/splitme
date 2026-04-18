@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { getTableClient, getTripIdBySlug, listTripRows, nowIso } from '../shared/tableClient'
+import { getClientPrincipal, getAuthenticatedUser, isAuthenticated } from '../shared/auth'
 
 interface UpdateExpenseBody {
   amount?: number
@@ -40,6 +41,10 @@ app.http('updateExpense', {
         return { status: 423, jsonBody: { error: 'trip locked' } }
       }
   // Public mode: no auth required
+      const principal = getClientPrincipal(req)
+      const user = isAuthenticated(principal) ? getAuthenticatedUser(principal) : null
+      const lastEditedBy = user ? user.name : null
+
       const expense: any = rows.find(r => r.rowKey === `expense:${expenseId}`)
       if (!expense) return { status: 404, jsonBody: { error: 'expense not found' } }
       const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => r.participantId))
@@ -55,7 +60,8 @@ app.http('updateExpense', {
         description: body.description !== undefined ? body.description : expense.description,
         paidBy: body.paidBy || expense.paidBy,
         participantIds: body.participants ? body.participants.join(',') : expense.participantIds,
-        updatedAt: nowIso()
+        updatedAt: nowIso(),
+        lastEditedBy: lastEditedBy || ''
       }
       await client.updateEntity(updated, 'Replace')
       return { status: 200, jsonBody: {
@@ -67,7 +73,9 @@ app.http('updateExpense', {
         paidBy: updated.paidBy,
         participants: updated.participantIds.split(',').filter(Boolean),
         createdAt: updated.createdAt,
-        updatedAt: updated.updatedAt
+        updatedAt: updated.updatedAt,
+        createdBy: updated.createdBy || null,
+        lastEditedBy
       }}
     } catch (e: any) {
       ctx.error(e)

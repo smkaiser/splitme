@@ -54,6 +54,8 @@ export interface ExpenseRow {
   participantIds: string
   createdAt: string
   updatedAt: string
+  createdBy?: string
+  lastEditedBy?: string
 }
 
 export interface SlugIndexRow {
