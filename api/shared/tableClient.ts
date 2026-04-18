@@ -65,6 +65,26 @@ export interface SlugIndexRow {
   ownerProvider?: string
 }
 
+export interface ContributorRow {
+  partitionKey: string // tripId
+  rowKey: string // contributor:{userId}
+  type: 'contributor'
+  userId: string
+  userName: string
+  userProvider: string
+  linkedParticipantId?: string
+  joinedAt: string
+  updatedAt: string
+}
+
+export interface ContributorIndexRow {
+  partitionKey: string // contributorIdx:{userId}
+  rowKey: string // tripSlug
+  tripId: string
+  tripName: string
+  joinedAt: string
+}
+
 export function newId() { return randomUUID() }
 
 export function nowIso() { return new Date().toISOString() }

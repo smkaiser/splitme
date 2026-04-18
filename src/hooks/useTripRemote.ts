@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { Participant, Expense } from '@/types'
+import type { Participant, Expense, Contributor } from '@/types'
 import { getErrorMessage } from '@/lib/errors'
 
 // Minimal remote synchronization hook (skeleton)
@@ -16,6 +16,7 @@ export interface UseTripRemoteOptions {
 interface RemoteState {
   participants: Participant[]
   expenses: Expense[]
+  contributors: Contributor[]
   loading: boolean
   error: string | null
   refreshing: boolean
@@ -24,12 +25,14 @@ interface RemoteState {
   ownerName: string | null
   ownerProvider: string | null
   tripName: string | null
+  isContributor: boolean
 }
 
 export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptions) {
   const [state, setState] = useState<RemoteState>({
     participants: [],
     expenses: [],
+    contributors: [],
     loading: true,
     error: null,
     refreshing: false,
@@ -37,7 +40,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     ownerId: null,
     ownerName: null,
     ownerProvider: null,
-    tripName: null
+    tripName: null,
+    isContributor: false
   })
 
   const fetchAll = useCallback(async () => {
@@ -50,6 +54,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
         ...s,
         participants: data.participants || [],
         expenses: data.expenses || [],
+        contributors: data.contributors || [],
         loading: false,
         error: null,
         refreshing: false,
@@ -57,7 +62,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
         ownerId: data.ownerId ?? null,
         ownerName: data.ownerName ?? null,
         ownerProvider: data.ownerProvider ?? null,
-        tripName: data.name ?? s.tripName
+        tripName: data.name ?? s.tripName,
+        isContributor: Boolean(data.isContributor)
       }))
     } catch (e: any) {
       setState(s => ({ ...s, error: e.message || 'error', loading: false, refreshing: false }))
@@ -158,6 +164,56 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     return Boolean(data.locked)
   }
 
+  async function joinTrip(linkedParticipantId?: string | null) {
+    const body: Record<string, unknown> = {}
+    if (linkedParticipantId) body.linkedParticipantId = linkedParticipantId
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/contributors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include'
+    })
+    if (!res.ok) throw new Error(await getErrorMessage(res))
+    const contributor = await res.json()
+    setState(s => ({
+      ...s,
+      contributors: s.contributors.some(c => c.userId === contributor.userId)
+        ? s.contributors
+        : [...s.contributors, contributor],
+      isContributor: true
+    }))
+    return contributor
+  }
+
+  async function leaveTrip() {
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/contributors`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    if (res.status !== 204 && !res.ok) throw new Error(await getErrorMessage(res))
+    setState(s => ({ ...s, isContributor: false }))
+    // Re-fetch to get accurate contributors list
+    await fetchAll()
+  }
+
+  async function linkParticipant(linkedParticipantId: string | null) {
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/contributors`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ linkedParticipantId }),
+      credentials: 'include'
+    })
+    if (!res.ok) throw new Error(await getErrorMessage(res))
+    const updated = await res.json()
+    setState(s => ({
+      ...s,
+      contributors: s.contributors.map(c =>
+        c.userId === updated.userId ? { ...c, linkedParticipantId: updated.linkedParticipantId } : c
+      )
+    }))
+    return updated
+  }
+
   return {
     ...state,
     refresh: fetchAll,
@@ -166,6 +222,9 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     createExpense,
     updateExpense,
     deleteExpense,
-    toggleLock
+    toggleLock,
+    joinTrip,
+    leaveTrip,
+    linkParticipant
   }
 }

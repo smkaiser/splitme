@@ -6,6 +6,7 @@ import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 
 
 export function LandingPage() {
@@ -17,7 +18,7 @@ export function LandingPage() {
 
   const sortedTrips = useMemo(() => {
     return (trips || [])
-      .filter(t => !t.locked)
+      .filter(t => !t.locked || t.role === 'contributor')
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [trips])
 
@@ -61,6 +62,9 @@ export function LandingPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium truncate">{trip.name}</span>
+                      {trip.role === 'contributor' && (
+                        <Badge variant="outline" className="text-xs">Contributor</Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {new Date(trip.createdAt).toLocaleDateString()}

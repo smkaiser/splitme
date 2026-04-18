@@ -7,8 +7,9 @@ import { UserMenu } from '@/components/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Trash, Plus } from '@phosphor-icons/react'
+import { Trash, Plus, SignOut } from '@phosphor-icons/react'
 import { Badge } from '@/components/ui/badge'
+import { toast, Toaster } from 'sonner'
 
 export function TripsAdmin() {
   const navigate = useNavigate()
@@ -48,6 +49,24 @@ export function TripsAdmin() {
       await deleteTrip(trip.slug)
     } catch (e: any) {
       setError(e.message || 'Delete failed')
+    }
+  }
+
+  const handleLeave = async (trip: Trip) => {
+    if (!confirm(`Leave trip "${trip.name}"? It will be removed from your list.`)) return
+    try {
+      const res = await fetch(`/api/trips/${encodeURIComponent(trip.slug)}/contributors`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      if (res.status !== 204 && !res.ok) {
+        throw new Error('Failed to leave trip')
+      }
+      toast.success(`Left "${trip.name}"`)
+      // Refresh the list
+      window.location.reload()
+    } catch (e: any) {
+      setError(e.message || 'Leave failed')
     }
   }
 
@@ -116,6 +135,11 @@ export function TripsAdmin() {
                     {trip.locked && (
                       <Badge variant="secondary">Locked</Badge>
                     )}
+                    {trip.role === 'contributor' ? (
+                      <Badge variant="outline">Contributor</Badge>
+                    ) : (
+                      <Badge variant="default">Owner</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Created {new Date(trip.createdAt).toLocaleDateString()} • URL /t/{trip.slug}
@@ -123,9 +147,15 @@ export function TripsAdmin() {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => navigate(`/t/${trip.slug}`)}>Open</Button>
-                  <Button variant="destructive" onClick={() => handleDelete(trip)} disabled={!user}>
-                    <Trash className="w-4 h-4" />
-                  </Button>
+                  {trip.role === 'contributor' ? (
+                    <Button variant="outline" onClick={() => handleLeave(trip)} disabled={!user} title="Leave trip">
+                      <SignOut className="w-4 h-4" />
+                    </Button>
+                  ) : (
+                    <Button variant="destructive" onClick={() => handleDelete(trip)} disabled={!user}>
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -175,6 +205,7 @@ export function TripsAdmin() {
           </CardContent>
         </Card>
       </div>
+      <Toaster position="top-center" />
     </div>
   )
 }

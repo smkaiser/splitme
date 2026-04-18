@@ -53,8 +53,55 @@ app.http('trips', {
             } catch {}
           }
           if (ownerId && ownerId !== user.id) continue
-          trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null, locked: !!locked })
+          trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null, locked: !!locked, role: 'owner' as const })
         }
+
+        // Also fetch trips where user is a contributor via the reverse index
+        const contributedSlugs = new Set<string>()
+        try {
+          for await (const ent of client.listEntities({ queryOptions: { filter: `PartitionKey eq 'contributorIdx:${user.id}'` } })) {
+            const cSlug = (ent as any).rowKey
+            if (trips.some(t => t.slug === cSlug)) continue // already listed as owner
+            contributedSlugs.add(cSlug)
+            const cTripId = (ent as any).tripId
+            const cTripName = (ent as any).tripName
+            const cJoinedAt = (ent as any).joinedAt
+            // Fetch basic meta for the trip
+            let cCreatedAt = cJoinedAt
+            let cLocked = false
+            let cOwnerId: string | null = null
+            let cOwnerName: string | null = null
+            let cOwnerProvider: string | null = null
+            try {
+              const meta = await client.getEntity<Record<string, any>>(cTripId, 'meta')
+              cCreatedAt = meta.createdAt || cJoinedAt
+              cLocked = !!(meta as any).locked
+              cOwnerId = (meta as any).ownerId || null
+              cOwnerName = (meta as any).ownerName || null
+              cOwnerProvider = (meta as any).ownerProvider || null
+            } catch (metaErr: any) {
+              if (metaErr.statusCode === 404) {
+                // Stale index — trip was deleted; clean up and skip
+                try { await client.deleteEntity(`contributorIdx:${user.id}`, cSlug) } catch {}
+                continue
+              }
+            }
+            trips.push({
+              slug: cSlug,
+              name: cTripName || cSlug,
+              tripId: cTripId,
+              createdAt: cCreatedAt,
+              ownerId: cOwnerId,
+              ownerName: cOwnerName,
+              ownerProvider: cOwnerProvider,
+              locked: cLocked,
+              role: 'contributor' as const
+            })
+          }
+        } catch (e) {
+          ctx.log(`Failed to fetch contributor index: ${e}`)
+        }
+
         return { status: 200, jsonBody: { trips } }
       } catch (e: any) {
         ctx.error(e)
@@ -158,6 +205,14 @@ app.http('deleteTrip', {
       }
       // list rows and delete
       const rows = await listTripRows(client, tripId)
+      // Clean up contributor reverse-index rows before deleting trip rows
+      for (const row of rows) {
+        if ((row as any).type === 'contributor' && (row as any).userId) {
+          try {
+            await client.deleteEntity(`contributorIdx:${(row as any).userId}`, slug)
+          } catch {}
+        }
+      }
       for (const row of rows) {
         try { await client.deleteEntity(tripId, (row as any).rowKey) } catch {}
       }

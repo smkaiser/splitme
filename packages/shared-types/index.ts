@@ -7,6 +7,7 @@ export interface Trip {
   ownerName?: string | null
   ownerProvider?: string | null
   locked?: boolean
+  role?: 'owner' | 'contributor' | null
 }
 
 export interface Participant {
@@ -23,4 +24,12 @@ export interface Expense {
   paidBy: string
   participants: string[]
   createdAt: string
+}
+
+export interface Contributor {
+  userId: string
+  userName: string
+  userProvider: string
+  linkedParticipantId?: string | null
+  joinedAt: string
 }
