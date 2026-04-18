@@ -46,19 +46,31 @@ app.http('getTripBySlug', {
         updatedAt: r.updatedAt
       }))
 
+      const contributors = rows.filter(r => r.type === 'contributor').map(r => ({
+        userId: r.userId,
+        userName: r.userName,
+        userProvider: r.userProvider,
+        linkedParticipantId: (r as any).linkedParticipantId || null,
+        joinedAt: r.joinedAt
+      }))
+
+      const isContributor = !!(user && contributors.some(c => c.userId === user.id))
+
       return { status: 200, jsonBody: {
         tripId,
         slug: meta.slug,
         name: meta.name,
         participants,
         expenses,
+        contributors,
         createdAt: meta.createdAt,
         updatedAt: meta.updatedAt,
         locked,
         ownerId,
         ownerName,
         ownerProvider,
-        isOwner
+        isOwner,
+        isContributor
       }}
     } catch (e: any) {
       ctx.error(e)

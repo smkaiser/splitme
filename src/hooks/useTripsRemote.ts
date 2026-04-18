@@ -35,7 +35,8 @@ export function useTripsRemote({ baseUrl = '/api' }: UseTripsRemoteOptions = {})
         ownerId: t.ownerId ?? null,
         ownerName: t.ownerName ?? null,
         ownerProvider: t.ownerProvider ?? null,
-        locked: Boolean(t.locked)
+        locked: Boolean(t.locked),
+        role: t.role ?? null
       }))
       setState(s => ({ ...s, trips, loading: false, error: null, requiresAuth: false }))
     } catch (e: any) {

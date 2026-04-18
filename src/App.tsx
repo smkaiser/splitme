@@ -14,6 +14,8 @@ import { ManageParticipantsDialog } from '@/components/ManageParticipantsDialog'
 import { ExpenseCard } from '@/components/ExpenseCard'
 import { SettlementCard } from '@/components/SettlementCard'
 import { ImportSpreadsheetDialog } from '@/components/ImportSpreadsheetDialog'
+import { ShareTripButton } from '@/components/ShareTripButton'
+import { JoinTripDialog } from '@/components/JoinTripDialog'
 import { calculateSettlements } from '@/lib/settlements'
 import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
 import { useAuth } from './hooks/useAuth'
@@ -39,7 +41,9 @@ function App({ tripSlug, tripName }: AppProps) {
     ownerId,
     ownerName,
     toggleLock,
-    tripName: remoteTripName
+    tripName: remoteTripName,
+    isContributor,
+    joinTrip
   } = useTripRemote({ tripSlug })
   const { user } = useAuth()
   const [showAddExpense, setShowAddExpense] = useState(false)
@@ -50,9 +54,11 @@ function App({ tripSlug, tripName }: AppProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [lockBusy, setLockBusy] = useState(false)
+  const [showJoinTrip, setShowJoinTrip] = useState(false)
 
   const displayTripName = remoteTripName || tripName
   const isOwner = Boolean(user && ownerId && user.id === ownerId)
+  const canJoin = Boolean(user && !isOwner && !isContributor && !loading)
 
   const readOnly = Boolean(locked)
   const settlements = calculateSettlements(expenses || [], participants || [])
@@ -145,6 +151,17 @@ function App({ tripSlug, tripName }: AppProps) {
             <p className="text-sm text-muted-foreground mb-1">Locked by {ownerName}</p>
           )}
           <p className="text-muted-foreground text-lg">Trip URL /t/{tripSlug} · <Link className="underline hover:no-underline" to="/trips">All Trips</Link></p>
+          <div className="flex flex-wrap items-center gap-2 justify-center mt-2">
+            <ShareTripButton tripSlug={tripSlug} />
+            {canJoin && (
+              <Button variant="outline" size="sm" onClick={() => setShowJoinTrip(true)} className="gap-2">
+                Join Trip
+              </Button>
+            )}
+            {isContributor && (
+              <Badge variant="secondary">Contributor</Badge>
+            )}
+          </div>
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
         </div>
@@ -419,6 +436,20 @@ function App({ tripSlug, tripName }: AppProps) {
               await createExpense({ amount, date, place, description, paidBy, participants })
             } catch (e: any) {
               toast.error(e?.message || 'Failed to add imported expense')
+              throw e
+            }
+          }}
+        />
+        <JoinTripDialog
+          open={showJoinTrip}
+          onOpenChange={setShowJoinTrip}
+          participants={participants || []}
+          onJoin={async (linkedParticipantId) => {
+            try {
+              await joinTrip(linkedParticipantId)
+              toast.success('You joined this trip!')
+            } catch (e: any) {
+              toast.error(e?.message || 'Failed to join trip')
               throw e
             }
           }}
