@@ -43,7 +43,9 @@ app.http('getTripBySlug', {
         paidBy: r.paidBy,
         participants: (r.participantIds || '').split(',').filter(Boolean),
         createdAt: r.createdAt,
-        updatedAt: r.updatedAt
+        updatedAt: r.updatedAt,
+        createdBy: (r as any).createdBy || null,
+        lastEditedBy: (r as any).lastEditedBy || null
       }))
 
       const contributors = rows.filter(r => r.type === 'contributor').map(r => ({

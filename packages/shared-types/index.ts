@@ -24,6 +24,8 @@ export interface Expense {
   paidBy: string
   participants: string[]
   createdAt: string
+  createdBy?: string | null
+  lastEditedBy?: string | null
 }
 
 export interface Contributor {

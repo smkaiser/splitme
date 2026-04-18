@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions'
 import { getTableClient, getTripIdBySlug, listTripRows, newId, nowIso } from '../shared/tableClient'
+import { getClientPrincipal, getAuthenticatedUser, isAuthenticated } from '../shared/auth'
 
 interface CreateExpenseBody {
   amount: number
@@ -40,6 +41,10 @@ app.http('createExpense', {
         return { status: 423, jsonBody: { error: 'trip locked' } }
       }
   // Public mode: no auth required
+      const principal = getClientPrincipal(req)
+      const user = isAuthenticated(principal) ? getAuthenticatedUser(principal) : null
+      const createdBy = user ? user.name : null
+
       const participantIds = new Set(rows.filter(r => r.type === 'participant').map(r => r.participantId))
       if (!participantIds.has(body.paidBy)) return { status: 400, jsonBody: { error: 'paidBy participant not found' } }
       for (const pid of body.participants) { if (!participantIds.has(pid)) return { status: 400, jsonBody: { error: `participant not found: ${pid}` } } }
@@ -57,7 +62,9 @@ app.http('createExpense', {
         paidBy: body.paidBy,
         participantIds: body.participants.join(','),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        createdBy: createdBy || '',
+        lastEditedBy: ''
       })
       return { status: 201, jsonBody: {
         id: expenseId,
@@ -67,7 +74,9 @@ app.http('createExpense', {
         description: body.description || '',
         paidBy: body.paidBy,
         participants: body.participants,
-        createdAt: now
+        createdAt: now,
+        createdBy,
+        lastEditedBy: null
       }}
     } catch (e: any) {
       ctx.error(e)
