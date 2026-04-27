@@ -19,7 +19,9 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete, readOnly 
   const amountPerPerson = expense.amount / expense.participants.length
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-us', { 
+    // Append time component to avoid UTC interpretation of date-only strings,
+    // which shifts the date back one day in west-of-UTC timezones.
+    return new Date(dateString + 'T00:00:00').toLocaleDateString('en-us', { 
       month: 'short', 
       day: 'numeric',
       year: 'numeric'
