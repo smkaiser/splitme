@@ -57,8 +57,30 @@ export function LandingPage() {
           <div className="mb-8 space-y-3">
             <h2 className="text-lg font-semibold">Your Trips</h2>
             {sortedTrips.map(trip => (
-              <Card key={trip.id} className="group">
+              <Card
+                key={trip.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/t/${trip.slug}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    navigate(`/t/${trip.slug}`)
+                  }
+                }}
+                className="group cursor-pointer transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <CardContent className="py-4 flex items-center gap-4">
+                  {trip.photoUpdatedAt && (
+                    <div className="w-14 h-14 rounded-md overflow-hidden bg-muted shrink-0">
+                      <img
+                        src={`/api/trips/${encodeURIComponent(trip.slug)}/photo?v=${encodeURIComponent(trip.photoUpdatedAt)}`}
+                        alt={`${trip.name} photo`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium truncate">{trip.name}</span>
@@ -70,9 +92,11 @@ export function LandingPage() {
                       {new Date(trip.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`/t/${trip.slug}`)}>
-                    Open
-                  </Button>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/t/${trip.slug}`)}>
+                      Open
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
