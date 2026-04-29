@@ -248,17 +248,6 @@ function App({ tripSlug, tripName }: AppProps) {
             <UsersIcon className="w-5 h-5 mr-2" />
             Manage Friends
           </Button>
-          {(expenses || []).length > 0 && (
-            <Button 
-              variant="outline" 
-              onClick={handleExportExpenses}
-              disabled={isExporting}
-              size="lg"
-            >
-              <DownloadIcon className="w-5 h-5 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export CSV'}
-            </Button>
-          )}
         </div>
 
         {/* Tab Navigation */}
@@ -280,7 +269,19 @@ function App({ tripSlug, tripName }: AppProps) {
             Settlements
           </Button>
           
-          {/* Tab-specific export buttons */}
+          {(expenses || []).length > 0 && activeTab === 'expenses' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExpenses}
+              disabled={isExporting}
+              className="ml-auto"
+            >
+              <DownloadIcon className="w-4 h-4 mr-2" />
+              {isExporting ? 'Exporting...' : 'Export CSV'}
+            </Button>
+          )}
+
           {activeTab === 'settlements' && settlements.length > 0 && (
             <Button 
               variant="outline" 
