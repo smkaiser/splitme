@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Camera, Trash, ImageSquare } from '@phosphor-icons/react'
+import { Camera, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 export interface TripPhotoBannerProps {
@@ -77,22 +77,43 @@ export function TripPhotoBanner({
 
   if (!photoUrl && !canEdit) return null
 
+  if (!photoUrl) {
+    return (
+      <div className="mb-6 flex justify-end">
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPTED}
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            e.target.value = ''
+            if (f) void handleFile(f)
+          }}
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-2"
+          onClick={triggerSelect}
+          disabled={busy}
+        >
+          <Camera className="w-4 h-4" />
+          Add photo
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="mb-6 relative">
-      <div className="w-full aspect-[16/6] sm:aspect-[16/5] rounded-lg overflow-hidden bg-muted border flex items-center justify-center">
-        {photoUrl ? (
-          <img
-            src={photoUrl}
-            alt="Trip banner"
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex flex-col items-center text-muted-foreground gap-2 py-10">
-            <ImageSquare className="w-10 h-10" />
-            <p className="text-sm">No trip photo yet</p>
-          </div>
-        )}
+      <div className="w-full aspect-[16/6] sm:aspect-[16/5] rounded-lg overflow-hidden bg-muted border">
+        <img
+          src={photoUrl}
+          alt="Trip banner"
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
       </div>
       {canEdit && (
         <div className="absolute right-2 bottom-2 flex gap-2">
@@ -115,19 +136,17 @@ export function TripPhotoBanner({
             disabled={busy}
           >
             <Camera className="w-4 h-4" />
-            {photoUrl ? 'Change photo' : 'Add photo'}
+            Change photo
           </Button>
-          {photoUrl && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={handleRemove}
-              disabled={busy}
-              title="Remove photo"
-            >
-              <Trash className="w-4 h-4" />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleRemove}
+            disabled={busy}
+            title="Remove photo"
+          >
+            <Trash className="w-4 h-4" />
+          </Button>
         </div>
       )}
     </div>
