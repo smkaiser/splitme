@@ -127,7 +127,19 @@ export function TripsAdmin() {
           )}
 
           {sortedTrips.map(trip => (
-            <Card key={trip.id} className="group">
+            <Card
+              key={trip.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/t/${trip.slug}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/t/${trip.slug}`)
+                }
+              }}
+              className="group cursor-pointer transition-colors hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <CardContent className="py-5 flex flex-col md:flex-row md:items-center gap-4">
                 {trip.photoUpdatedAt && (
                   <div className="w-full md:w-24 h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
@@ -155,7 +167,7 @@ export function TripsAdmin() {
                     Created {new Date(trip.createdAt).toLocaleDateString()} • URL /t/{trip.slug}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button variant="outline" onClick={() => navigate(`/t/${trip.slug}`)}>Open</Button>
                   {trip.role === 'contributor' ? (
                     <Button variant="outline" onClick={() => handleLeave(trip)} disabled={!user} title="Leave trip">
