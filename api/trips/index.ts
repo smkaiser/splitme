@@ -32,6 +32,7 @@ app.http('trips', {
           let ownerName: string | undefined = (ent as any).ownerName
           let ownerProvider: string | undefined = (ent as any).ownerProvider
           let locked: boolean | undefined = (ent as any).locked
+          let photoUpdatedAt: string | undefined = (ent as any).photoUpdatedAt
           // If ownership metadata missing or does not match the current user, fall back to meta row
           if (!ownerId || ownerId !== user.id || !name || !createdAt) {
             try {
@@ -45,6 +46,7 @@ app.http('trips', {
                 ownerName = (meta as any).ownerName || ownerName
                 ownerProvider = (meta as any).ownerProvider || ownerProvider
                 if (typeof (meta as any).locked === 'boolean') locked = (meta as any).locked
+                if ((meta as any).photoUpdatedAt) photoUpdatedAt = (meta as any).photoUpdatedAt
               }
               // Only allow listing trips owned by this user (or unclaimed legacy trips)
               if (meta && (meta as any).ownerId && (meta as any).ownerId !== user.id) {
@@ -53,7 +55,7 @@ app.http('trips', {
             } catch {}
           }
           if (ownerId && ownerId !== user.id) continue
-          trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null, locked: !!locked, role: 'owner' as const })
+          trips.push({ slug, name: name ?? slug, tripId, createdAt, ownerId: ownerId ?? null, ownerName: ownerName ?? null, ownerProvider: ownerProvider ?? null, locked: !!locked, photoUpdatedAt: photoUpdatedAt || null, role: 'owner' as const })
         }
 
         // Also fetch trips where user is a contributor via the reverse index
@@ -72,6 +74,7 @@ app.http('trips', {
             let cOwnerId: string | null = null
             let cOwnerName: string | null = null
             let cOwnerProvider: string | null = null
+            let cPhotoUpdatedAt: string | null = null
             try {
               const meta = await client.getEntity<Record<string, any>>(cTripId, 'meta')
               cCreatedAt = meta.createdAt || cJoinedAt
@@ -79,6 +82,7 @@ app.http('trips', {
               cOwnerId = (meta as any).ownerId || null
               cOwnerName = (meta as any).ownerName || null
               cOwnerProvider = (meta as any).ownerProvider || null
+              cPhotoUpdatedAt = (meta as any).photoUpdatedAt || null
             } catch (metaErr: any) {
               if (metaErr.statusCode === 404) {
                 // Stale index — trip was deleted; clean up and skip
@@ -95,6 +99,7 @@ app.http('trips', {
               ownerName: cOwnerName,
               ownerProvider: cOwnerProvider,
               locked: cLocked,
+              photoUpdatedAt: cPhotoUpdatedAt,
               role: 'contributor' as const
             })
           }

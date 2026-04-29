@@ -16,6 +16,7 @@ import { SettlementCard } from '@/components/SettlementCard'
 import { ImportSpreadsheetDialog } from '@/components/ImportSpreadsheetDialog'
 import { ShareTripButton } from '@/components/ShareTripButton'
 import { JoinTripDialog } from '@/components/JoinTripDialog'
+import { TripPhotoBanner } from '@/components/TripPhotoBanner'
 import { calculateSettlements } from '@/lib/settlements'
 import { exportExpensesToCSV, exportSettlementsToCSV } from '@/lib/csv-export'
 import { useAuth } from './hooks/useAuth'
@@ -43,7 +44,10 @@ function App({ tripSlug, tripName }: AppProps) {
     toggleLock,
     tripName: remoteTripName,
     isContributor,
-    joinTrip
+    joinTrip,
+    photoUpdatedAt,
+    setPhoto,
+    removePhoto
   } = useTripRemote({ tripSlug })
   const { user } = useAuth()
   const [showAddExpense, setShowAddExpense] = useState(false)
@@ -61,6 +65,7 @@ function App({ tripSlug, tripName }: AppProps) {
   const canJoin = Boolean(user && !isOwner && !isContributor && !loading)
 
   const readOnly = Boolean(locked)
+  const canEditPhoto = Boolean(user && (isOwner || isContributor))
   const settlements = calculateSettlements(expenses || [], participants || [])
   const totalExpenses = (expenses || []).reduce((sum, expense) => sum + expense.amount, 0)
 
@@ -165,6 +170,15 @@ function App({ tripSlug, tripName }: AppProps) {
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           {loading && <p className="text-sm text-muted-foreground mt-2">Loading trip data...</p>}
         </div>
+
+        <TripPhotoBanner
+          tripSlug={tripSlug}
+          photoUpdatedAt={photoUpdatedAt}
+          canEdit={canEditPhoto}
+          readOnly={readOnly}
+          onUpload={setPhoto}
+          onRemove={removePhoto}
+        />
 
         {/* Quick Stats (condensed on mobile) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-8">

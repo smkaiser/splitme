@@ -8,6 +8,7 @@ export interface Trip {
   ownerProvider?: string | null
   locked?: boolean
   role?: 'owner' | 'contributor' | null
+  photoUpdatedAt?: string | null
 }
 
 export interface Participant {

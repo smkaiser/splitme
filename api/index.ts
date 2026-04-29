@@ -3,6 +3,7 @@
 import './trips'
 import './trips/lock'
 import './trip/getBySlug'
+import './trip/photo'
 import './participants/create'
 import './participants/delete'
 import './expenses/create'

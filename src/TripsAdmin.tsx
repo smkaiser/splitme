@@ -129,6 +129,18 @@ export function TripsAdmin() {
           {sortedTrips.map(trip => (
             <Card key={trip.id} className="group">
               <CardContent className="py-5 flex flex-col md:flex-row md:items-center gap-4">
+                <div className="w-full md:w-24 h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                  {trip.photoUpdatedAt ? (
+                    <img
+                      src={`/api/trips/${encodeURIComponent(trip.slug)}/photo?v=${encodeURIComponent(trip.photoUpdatedAt)}`}
+                      alt={`${trip.name} photo`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No photo</span>
+                  )}
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-lg">{trip.name}</h3>

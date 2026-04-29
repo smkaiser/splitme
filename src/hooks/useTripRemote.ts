@@ -26,6 +26,7 @@ interface RemoteState {
   ownerProvider: string | null
   tripName: string | null
   isContributor: boolean
+  photoUpdatedAt: string | null
 }
 
 export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptions) {
@@ -41,7 +42,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     ownerName: null,
     ownerProvider: null,
     tripName: null,
-    isContributor: false
+    isContributor: false,
+    photoUpdatedAt: null
   })
 
   const fetchAll = useCallback(async () => {
@@ -63,7 +65,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
         ownerName: data.ownerName ?? null,
         ownerProvider: data.ownerProvider ?? null,
         tripName: data.name ?? s.tripName,
-        isContributor: Boolean(data.isContributor)
+        isContributor: Boolean(data.isContributor),
+        photoUpdatedAt: data.photoUpdatedAt ?? null
       }))
     } catch (e: any) {
       setState(s => ({ ...s, error: e.message || 'error', loading: false, refreshing: false }))
@@ -214,6 +217,38 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     return updated
   }
 
+  async function setPhoto(file: File) {
+    const dataBase64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = String(reader.result || '')
+        const idx = result.indexOf(',')
+        resolve(idx >= 0 ? result.slice(idx + 1) : result)
+      }
+      reader.onerror = () => reject(reader.error || new Error('Failed to read file'))
+      reader.readAsDataURL(file)
+    })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/photo`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contentType: file.type, dataBase64 }),
+      credentials: 'include'
+    })
+    if (!res.ok) throw new Error(await getErrorMessage(res))
+    const data = await res.json()
+    setState(s => ({ ...s, photoUpdatedAt: data.photoUpdatedAt || null }))
+    return data
+  }
+
+  async function removePhoto() {
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/photo`, {
+      method: 'DELETE',
+      credentials: 'include'
+    })
+    if (res.status !== 204 && !res.ok) throw new Error(await getErrorMessage(res))
+    setState(s => ({ ...s, photoUpdatedAt: null }))
+  }
+
   return {
     ...state,
     refresh: fetchAll,
@@ -225,6 +260,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     toggleLock,
     joinTrip,
     leaveTrip,
-    linkParticipant
+    linkParticipant,
+    setPhoto,
+    removePhoto
   }
 }

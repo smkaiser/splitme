@@ -25,6 +25,8 @@ app.http('getTripBySlug', {
       const ownerName = (meta as any).ownerName ?? null
       const ownerProvider = (meta as any).ownerProvider ?? null
       const locked = !!(meta as any).locked
+      const photoUpdatedAt = (meta as any).photoUpdatedAt || null
+      const photoContentType = (meta as any).photoContentType || null
       const isOwner = !!(user && ownerId && user.id === ownerId)
 
       const participants = rows.filter(r => r.type === 'participant').map(r => ({
@@ -71,6 +73,8 @@ app.http('getTripBySlug', {
         ownerId,
         ownerName,
         ownerProvider,
+        photoUpdatedAt: photoUpdatedAt || null,
+        photoContentType: photoContentType || null,
         isOwner,
         isContributor
       }}
