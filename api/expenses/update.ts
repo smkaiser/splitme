@@ -65,7 +65,7 @@ app.http('updateExpense', {
           if (typeof val !== 'number' || !Number.isFinite(val) || val < 0) return { status: 400, jsonBody: { error: 'splits values must be finite non-negative numbers' } }
         }
         const effectiveAmount = body.amount !== undefined ? body.amount : expense.amount
-        const sum = Object.values(body.splits).reduce((a: number, b: number) => a + b, 0)
+        const sum = Object.values(body.splits).reduce((a: number, b: unknown) => a + (b as number), 0)
         if (Math.abs(sum - Number(effectiveAmount)) > 0.01) return { status: 400, jsonBody: { error: 'splits must sum to amount' } }
       }
       const updated = {

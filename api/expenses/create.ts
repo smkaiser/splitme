@@ -30,7 +30,7 @@ function validate(body: any): asserts body is CreateExpenseBody {
     for (const val of Object.values(body.splits)) {
       if (typeof val !== 'number' || !Number.isFinite(val) || val < 0) throw new Error('splits values must be finite non-negative numbers')
     }
-    const sum = Object.values(body.splits).reduce((a, b) => a + b, 0)
+    const sum = Object.values(body.splits).reduce((a: number, b: unknown) => a + (b as number), 0)
     if (Math.abs(sum - body.amount) > 0.01) throw new Error('splits must sum to amount')
   }
 }
