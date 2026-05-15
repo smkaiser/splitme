@@ -24,6 +24,7 @@ export interface Expense {
   description: string
   paidBy: string
   participants: string[]
+  splits?: Record<string, number> | null
   createdAt: string
   createdBy?: string | null
   lastEditedBy?: string | null

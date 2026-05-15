@@ -9,6 +9,7 @@ interface CreateExpenseBody {
   description?: string
   paidBy: string
   participants: string[]
+  splits?: Record<string, number> | null
 }
 
 function validate(body: any): asserts body is CreateExpenseBody {
@@ -19,6 +20,19 @@ function validate(body: any): asserts body is CreateExpenseBody {
   if (body.date && isNaN(Date.parse(body.date))) throw new Error('date must be ISO string')
   if (body.place && typeof body.place !== 'string') throw new Error('place must be string')
   if (body.description && typeof body.description !== 'string') throw new Error('description must be string')
+  if (body.splits !== undefined && body.splits !== null) {
+    if (typeof body.splits !== 'object' || Array.isArray(body.splits)) throw new Error('splits must be an object')
+    const splitKeys = Object.keys(body.splits)
+    const participantSet = new Set(body.participants)
+    for (const key of splitKeys) {
+      if (!participantSet.has(key)) throw new Error(`splits key not in participants: ${key}`)
+    }
+    for (const val of Object.values(body.splits)) {
+      if (typeof val !== 'number' || !Number.isFinite(val) || val < 0) throw new Error('splits values must be finite non-negative numbers')
+    }
+    const sum = Object.values(body.splits).reduce((a, b) => a + b, 0)
+    if (Math.abs(sum - body.amount) > 0.01) throw new Error('splits must sum to amount')
+  }
 }
 
 app.http('createExpense', {
@@ -64,7 +78,8 @@ app.http('createExpense', {
         createdAt: now,
         updatedAt: now,
         createdBy: createdBy || '',
-        lastEditedBy: ''
+        lastEditedBy: '',
+        splits: body.splits ? JSON.stringify(body.splits) : ''
       })
       return { status: 201, jsonBody: {
         id: expenseId,
@@ -74,6 +89,7 @@ app.http('createExpense', {
         description: body.description || '',
         paidBy: body.paidBy,
         participants: body.participants,
+        splits: body.splits || null,
         createdAt: now,
         createdBy,
         lastEditedBy: null

@@ -16,7 +16,8 @@ interface ExpenseCardProps {
 export function ExpenseCard({ expense, participants, onEdit, onDelete, readOnly = false }: ExpenseCardProps) {
   const payer = participants.find(p => p.id === expense.paidBy)
   const expenseParticipants = participants.filter(p => expense.participants.includes(p.id))
-  const amountPerPerson = expense.amount / expense.participants.length
+  const hasCustomSplits = expense.splits != null && Object.keys(expense.splits).length > 0
+  const amountPerPerson = hasCustomSplits ? null : expense.amount / expense.participants.length
 
   const formatDate = (dateString: string) => {
     // Append time component to avoid UTC interpretation of date-only strings,
@@ -54,7 +55,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete, readOnly 
               ${expense.amount.toFixed(2)}
             </div>
             <div className="text-sm text-muted-foreground">
-              ${amountPerPerson.toFixed(2)} per person
+              {hasCustomSplits ? 'Custom split' : `$${amountPerPerson!.toFixed(2)} per person`}
             </div>
           </div>
         </div>
@@ -74,6 +75,11 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete, readOnly 
                   className="bg-secondary/50"
                 >
                   {participant.name}
+                  {hasCustomSplits && expense.splits![participant.id] != null && (
+                    <span className="ml-1 text-muted-foreground">
+                      (${expense.splits![participant.id].toFixed(2)})
+                    </span>
+                  )}
                 </Badge>
               ))}
             </div>
@@ -81,7 +87,7 @@ export function ExpenseCard({ expense, participants, onEdit, onDelete, readOnly 
           
           <div className="flex items-center justify-between pt-2 border-t">
             <div className="text-sm text-muted-foreground">
-              Split between {expense.participants.length} {expense.participants.length === 1 ? 'person' : 'people'}
+              {hasCustomSplits ? 'Custom split' : `Split between ${expense.participants.length} ${expense.participants.length === 1 ? 'person' : 'people'}`}
             </div>
             <div className="flex gap-2">
               <Tooltip>

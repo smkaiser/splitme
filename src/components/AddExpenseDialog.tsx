@@ -19,6 +19,7 @@ export function AddExpenseDialog({ open, onOpenChange, participants, onAddExpens
       place: values.place,
       paidBy: values.paidBy,
       participants: values.participants,
+      splits: values.splits ?? null,
       createdAt: new Date().toISOString()
     }
 

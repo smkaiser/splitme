@@ -26,8 +26,9 @@ export function calculateSettlements(expenses: Expense[], participants: Particip
 
     // Each participant (including payer) gets debited their share
     expense.participants.forEach(participantId => {
+      const share = expense.splits ? expense.splits[participantId] ?? amountPerPerson : amountPerPerson
       const currentBalance = balances.get(participantId) || 0
-      balances.set(participantId, currentBalance - amountPerPerson)
+      balances.set(participantId, currentBalance - share)
     })
   })
 

@@ -113,6 +113,76 @@ describe('calculateSettlements', () => {
     expect(result[0].amount).toBeCloseTo(50)
   })
 
+  it('uses custom splits when provided (two participants)', () => {
+    const participants = [makeParticipant('a', 'Alice'), makeParticipant('b', 'Bob')]
+    const expenses = [
+      makeExpense({
+        amount: 100,
+        paidBy: 'a',
+        participants: ['a', 'b'],
+        splits: { a: 30, b: 70 },
+      }),
+    ]
+
+    const result = calculateSettlements(expenses, participants)
+    // Alice paid 100, owes 30 → net +70. Bob paid 0, owes 70 → net -70.
+    expect(result).toHaveLength(1)
+    expect(result[0].from).toBe('b')
+    expect(result[0].to).toBe('a')
+    expect(result[0].amount).toBeCloseTo(70)
+  })
+
+  it('uses custom splits with three participants', () => {
+    const participants = [
+      makeParticipant('a', 'Alice'),
+      makeParticipant('b', 'Bob'),
+      makeParticipant('c', 'Carol'),
+    ]
+    const expenses = [
+      makeExpense({
+        amount: 100,
+        paidBy: 'a',
+        participants: ['a', 'b', 'c'],
+        splits: { a: 50, b: 30, c: 20 },
+      }),
+    ]
+
+    const result = calculateSettlements(expenses, participants)
+    // Alice paid 100, owes 50 → net +50. Bob owes 30. Carol owes 20.
+    const totalOwed = result.reduce((sum, s) => sum + s.amount, 0)
+    expect(totalOwed).toBeCloseTo(50)
+    result.forEach(s => expect(s.to).toBe('a'))
+  })
+
+  it('handles mix of custom splits and equal split expenses', () => {
+    const participants = [makeParticipant('a', 'Alice'), makeParticipant('b', 'Bob')]
+    const expenses = [
+      makeExpense({
+        id: '1',
+        amount: 100,
+        paidBy: 'a',
+        participants: ['a', 'b'],
+        splits: { a: 20, b: 80 },
+      }),
+      makeExpense({
+        id: '2',
+        amount: 60,
+        paidBy: 'b',
+        participants: ['a', 'b'],
+        // no splits — equal split: 30 each
+      }),
+    ]
+
+    const result = calculateSettlements(expenses, participants)
+    // Expense 1: Alice paid 100, owes 20 → net +80. Bob owes 80 → net -80.
+    // Expense 2: Bob paid 60, owes 30 → net +30. Alice owes 30 → net -30.
+    // Combined: Alice net +50, Bob net -50.
+    expect(result).toHaveLength(1)
+    expect(result[0].from).toBe('b')
+    expect(result[0].to).toBe('a')
+    expect(result[0].amount).toBeCloseTo(50)
+  })
+
   it('handles floating point precision', () => {
     const participants = [
       makeParticipant('a', 'Alice'),

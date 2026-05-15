@@ -28,10 +28,17 @@ export function exportExpensesToCSV(
 
     const expenseRows = expenses.map(expense => {
       const paidByName = participants.find(p => p.id === expense.paidBy)?.name || 'Unknown'
+      const hasCustomSplits = expense.splits != null && Object.keys(expense.splits).length > 0
       const participantNames = expense.participants
-        .map(id => participants.find(p => p.id === id)?.name || 'Unknown')
+        .map(id => {
+          const name = participants.find(p => p.id === id)?.name || 'Unknown'
+          if (hasCustomSplits && expense.splits![id] != null) {
+            return `${name} ($${expense.splits![id].toFixed(2)})`
+          }
+          return name
+        })
         .join('; ')
-      const amountPerPerson = expense.amount / expense.participants.length
+      const amountPerPerson = hasCustomSplits ? 'Custom' : (expense.amount / expense.participants.length).toFixed(2)
 
       return [
         expense.date,
@@ -40,7 +47,7 @@ export function exportExpensesToCSV(
         expense.description,
         paidByName,
         participantNames,
-        amountPerPerson.toFixed(2),
+        amountPerPerson,
         new Date(expense.createdAt).toLocaleString()
       ]
     })

@@ -114,7 +114,8 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
         place: expense.place,
         description: expense.description,
         paidBy: expense.paidBy,
-        participants: expense.participants
+        participants: expense.participants,
+        splits: expense.splits ?? null
       }),
       credentials: 'include'
     })

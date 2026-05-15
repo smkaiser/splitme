@@ -22,6 +22,7 @@ export function EditExpenseDialog({ open, onOpenChange, expense, participants, o
       place: values.place,
       paidBy: values.paidBy,
       participants: values.participants,
+      splits: values.splits ?? null,
     }
 
     onUpdateExpense(updatedExpense)
@@ -49,6 +50,7 @@ export function EditExpenseDialog({ open, onOpenChange, expense, participants, o
             place: expense.place,
             paidBy: expense.paidBy,
             participants: expense.participants,
+            splits: expense.splits,
           }}
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}

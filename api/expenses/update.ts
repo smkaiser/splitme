@@ -9,6 +9,7 @@ interface UpdateExpenseBody {
   description?: string
   paidBy?: string
   participants?: string[]
+  splits?: Record<string, number> | null
 }
 
 function validate(body: any) {
@@ -19,6 +20,7 @@ function validate(body: any) {
   if (body.description && typeof body.description !== 'string') throw new Error('description must be string')
   if (body.paidBy && typeof body.paidBy !== 'string') throw new Error('paidBy must be string')
   if (body.participants && (!Array.isArray(body.participants) || body.participants.length === 0)) throw new Error('participants must be non-empty array')
+  // splits validation is deferred to handler where we have access to existing expense data
 }
 
 app.http('updateExpense', {
@@ -52,6 +54,20 @@ app.http('updateExpense', {
       if (body.participants) {
         for (const pid of body.participants) if (!participantIds.has(pid)) return { status: 400, jsonBody: { error: `participant not found: ${pid}` } }
       }
+      if (body.splits !== undefined && body.splits !== null) {
+        if (typeof body.splits !== 'object' || Array.isArray(body.splits)) return { status: 400, jsonBody: { error: 'splits must be an object' } }
+        const effectiveParticipants = body.participants || (expense.participantIds || '').split(',').filter(Boolean)
+        const participantSet = new Set(effectiveParticipants)
+        for (const key of Object.keys(body.splits)) {
+          if (!participantSet.has(key)) return { status: 400, jsonBody: { error: `splits key not in participants: ${key}` } }
+        }
+        for (const val of Object.values(body.splits)) {
+          if (typeof val !== 'number' || !Number.isFinite(val) || val < 0) return { status: 400, jsonBody: { error: 'splits values must be finite non-negative numbers' } }
+        }
+        const effectiveAmount = body.amount !== undefined ? body.amount : expense.amount
+        const sum = Object.values(body.splits).reduce((a: number, b: number) => a + b, 0)
+        if (Math.abs(sum - Number(effectiveAmount)) > 0.01) return { status: 400, jsonBody: { error: 'splits must sum to amount' } }
+      }
       const updated = {
         ...expense,
         amount: body.amount !== undefined ? body.amount : expense.amount,
@@ -60,6 +76,7 @@ app.http('updateExpense', {
         description: body.description !== undefined ? body.description : expense.description,
         paidBy: body.paidBy || expense.paidBy,
         participantIds: body.participants ? body.participants.join(',') : expense.participantIds,
+        splits: body.splits !== undefined ? (body.splits ? JSON.stringify(body.splits) : '') : expense.splits,
         updatedAt: nowIso(),
         lastEditedBy: lastEditedBy || ''
       }
@@ -72,6 +89,7 @@ app.http('updateExpense', {
         description: updated.description,
         paidBy: updated.paidBy,
         participants: updated.participantIds.split(',').filter(Boolean),
+        splits: updated.splits ? JSON.parse(updated.splits) : null,
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt,
         createdBy: updated.createdBy || null,

@@ -47,7 +47,8 @@ app.http('getTripBySlug', {
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
         createdBy: (r as any).createdBy || null,
-        lastEditedBy: (r as any).lastEditedBy || null
+        lastEditedBy: (r as any).lastEditedBy || null,
+        splits: (() => { try { const s = (r as any).splits; return s ? JSON.parse(s) : null } catch { return null } })()
       }))
 
       const contributors = rows.filter(r => r.type === 'contributor').map(r => ({
