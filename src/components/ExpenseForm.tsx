@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
-import { Camera, CaretDown, CaretUp, Check, CircleNotch } from '@phosphor-icons/react'
+import { Camera, CaretDown, CaretUp, Check, CircleNotch, ImageSquare } from '@phosphor-icons/react'
 import type { Participant } from '@/types'
 import type { ReceiptAnalysis } from '@/hooks/useTripRemote'
 
@@ -46,7 +46,8 @@ export function ExpenseForm({
   canScanReceipt = false,
   onAnalyzeReceipt,
 }: ExpenseFormProps) {
-  const receiptInputRef = useRef<HTMLInputElement | null>(null)
+  const receiptCameraInputRef = useRef<HTMLInputElement | null>(null)
+  const receiptLibraryInputRef = useRef<HTMLInputElement | null>(null)
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
   const [date, setDate] = useState(initialValues?.date ?? new Date().toISOString().split('T')[0])
@@ -319,7 +320,7 @@ export function ExpenseForm({
       {onAnalyzeReceipt && (
         <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
           <input
-            ref={receiptInputRef}
+            ref={receiptCameraInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             capture="environment"
@@ -330,18 +331,41 @@ export function ExpenseForm({
               if (file) void handleReceiptFile(file)
             }}
           />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            disabled={!canScanReceipt || scanningReceipt}
-            onClick={() => receiptInputRef.current?.click()}
-          >
-            {scanningReceipt
-              ? <CircleNotch className="animate-spin" size={18} />
-              : <Camera size={18} />}
-            {scanningReceipt ? 'Scanning receipt...' : 'Scan receipt'}
-          </Button>
+          <input
+            ref={receiptLibraryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              if (file) void handleReceiptFile(file)
+            }}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              disabled={!canScanReceipt || scanningReceipt}
+              onClick={() => receiptCameraInputRef.current?.click()}
+            >
+              {scanningReceipt
+                ? <CircleNotch className="animate-spin" size={18} />
+                : <Camera size={18} />}
+              {scanningReceipt ? 'Scanning...' : 'Take photo'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              disabled={!canScanReceipt || scanningReceipt}
+              onClick={() => receiptLibraryInputRef.current?.click()}
+            >
+              <ImageSquare size={18} />
+              Choose photo
+            </Button>
+          </div>
           {!canScanReceipt && (
             <p className="text-sm text-muted-foreground">Sign in to scan a receipt.</p>
           )}
