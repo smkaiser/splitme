@@ -25,6 +25,7 @@ dist-ssr
 *.sw?
 
 .env
+api/local.settings.json
 **/agent-eval-report*
 .file-manifest
 .devcontainer/

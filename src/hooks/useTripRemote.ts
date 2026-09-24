@@ -29,6 +29,18 @@ interface RemoteState {
   photoUpdatedAt: string | null
 }
 
+export interface ReceiptAnalysis {
+  merchantName: string | null
+  transactionDate: string | null
+  total: number | null
+  currency: string | null
+  confidence: {
+    merchantName: number | null
+    transactionDate: number | null
+    total: number | null
+  }
+}
+
 export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptions) {
   const [state, setState] = useState<RemoteState>({
     participants: [],
@@ -152,6 +164,28 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     throw new Error(await getErrorMessage(res))
   }
 
+  async function analyzeReceipt(file: File): Promise<ReceiptAnalysis> {
+    if (state.locked) throw new Error('Trip is locked. Unlock to scan a receipt.')
+    const dataBase64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = String(reader.result || '')
+        const separator = result.indexOf(',')
+        resolve(separator >= 0 ? result.slice(separator + 1) : result)
+      }
+      reader.onerror = () => reject(reader.error || new Error('Failed to read receipt image'))
+      reader.readAsDataURL(file)
+    })
+    const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/receipts/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contentType: file.type, dataBase64 }),
+      credentials: 'include'
+    })
+    if (!res.ok) throw new Error(await getErrorMessage(res))
+    return await res.json() as ReceiptAnalysis
+  }
+
   async function toggleLock(nextLocked: boolean) {
     const res = await fetch(`${baseUrl}/trips/${encodeURIComponent(tripSlug)}/lock`, {
       method: 'POST',
@@ -256,6 +290,7 @@ export function useTripRemote({ tripSlug, baseUrl = '/api' }: UseTripRemoteOptio
     createParticipant,
     deleteParticipant,
     createExpense,
+    analyzeReceipt,
     updateExpense,
     deleteExpense,
     toggleLock,

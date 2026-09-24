@@ -4,6 +4,8 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "TABLES_CONNECTION_STRING": "UseDevelopmentStorage=true",
-    "TABLE_NAME": "TripsData"
+    "TABLE_NAME": "TripsData",
+    "DOCUMENT_INTELLIGENCE_ENDPOINT": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
+    "DOCUMENT_INTELLIGENCE_API_KEY": "YOUR-KEY"
   }
 }

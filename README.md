@@ -8,6 +8,7 @@ A multi-trip expense splitter for groups of friends. Add participants, log expen
 - **Smart settlements** — automatically calculates the minimum number of payments to settle up
 - **Guest access** — anyone with a trip link (`/t/{slug}`) can view and add expenses, no account required
 - **CSV import/export** — bulk-import expenses from a spreadsheet or export for your records
+- **Receipt scanning** — signed-in users can scan a receipt to prefill expense details
 - **Auth-gated admin** — trip creation and deletion require sign-in (Microsoft, Google, GitHub, Facebook via Azure SWA)
 
 ## Tech Stack
@@ -76,6 +77,7 @@ All endpoints live under `/api`. Trip creation and deletion require authenticati
 | POST | `/api/trips/{slug}/participants` | | Add participant |
 | DELETE | `/api/trips/{slug}/participants/{id}` | | Remove participant (409 if referenced) |
 | POST | `/api/trips/{slug}/expenses` | | Add expense |
+| POST | `/api/trips/{slug}/receipts/analyze` | ✅ | Analyze a receipt and return expense fields |
 | PATCH | `/api/trips/{slug}/expenses/{id}` | | Update expense |
 | DELETE | `/api/trips/{slug}/expenses/{id}` | | Delete expense |
 | DELETE | `/api/trips/{slug}` | ✅ | Delete trip (owner only) |
@@ -105,6 +107,8 @@ The app deploys to Azure Static Web Apps via GitHub Actions (`.github/workflows/
 |----------|---------|
 | `TABLES_CONNECTION_STRING` | Azure Table Storage connection string |
 | `TABLE_NAME` | Override table name (default: `TripsData`) |
+| `DOCUMENT_INTELLIGENCE_ENDPOINT` | Azure Document Intelligence resource endpoint |
+| `DOCUMENT_INTELLIGENCE_API_KEY` | Azure Document Intelligence API key |
 
 ## License
 

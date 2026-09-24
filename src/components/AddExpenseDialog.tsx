@@ -1,15 +1,25 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Expense, Participant } from '@/types'
 import { ExpenseForm, ExpenseFormValues } from '@/components/ExpenseForm'
+import type { ReceiptAnalysis } from '@/hooks/useTripRemote'
 
 interface AddExpenseDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   participants: Participant[]
   onAddExpense: (expense: Expense) => void
+  canScanReceipt: boolean
+  onAnalyzeReceipt: (file: File) => Promise<ReceiptAnalysis>
 }
 
-export function AddExpenseDialog({ open, onOpenChange, participants, onAddExpense }: AddExpenseDialogProps) {
+export function AddExpenseDialog({
+  open,
+  onOpenChange,
+  participants,
+  onAddExpense,
+  canScanReceipt,
+  onAnalyzeReceipt
+}: AddExpenseDialogProps) {
   const handleSubmit = (values: ExpenseFormValues) => {
     const expense: Expense = {
       id: Date.now().toString(),
@@ -44,6 +54,8 @@ export function AddExpenseDialog({ open, onOpenChange, participants, onAddExpens
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
           submitLabel="Add Expense"
+          canScanReceipt={canScanReceipt}
+          onAnalyzeReceipt={onAnalyzeReceipt}
         />
       </DialogContent>
     </Dialog>

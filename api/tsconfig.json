@@ -14,5 +14,5 @@
     "declaration": false
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "**/*.function.json", "**/function.json"]
+  "exclude": ["node_modules", "**/*.function.json", "**/function.json", "**/*.test.ts"]
 }

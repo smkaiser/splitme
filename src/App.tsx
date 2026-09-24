@@ -38,6 +38,7 @@ function App({ tripSlug, tripName }: AppProps) {
     createExpense,
     updateExpense,
     deleteExpense,
+    analyzeReceipt,
     locked,
     ownerId,
     ownerName,
@@ -377,6 +378,8 @@ function App({ tripSlug, tripName }: AppProps) {
           open={showAddExpense}
           onOpenChange={setShowAddExpense}
           participants={participants || []}
+          canScanReceipt={Boolean(user)}
+          onAnalyzeReceipt={analyzeReceipt}
           onAddExpense={async (expense) => {
             // Create expense remotely (ignore local id fields, server returns canonical object)
             try {

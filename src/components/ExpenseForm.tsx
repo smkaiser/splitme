@@ -1,12 +1,13 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
-import { CaretDown, CaretUp, Check } from '@phosphor-icons/react'
+import { Camera, CaretDown, CaretUp, Check, CircleNotch } from '@phosphor-icons/react'
 import type { Participant } from '@/types'
+import type { ReceiptAnalysis } from '@/hooks/useTripRemote'
 
 export interface ExpenseFormValues {
   description: string
@@ -25,6 +26,8 @@ interface ExpenseFormProps {
   onCancel: () => void
   submitLabel: string
   idPrefix?: string
+  canScanReceipt?: boolean
+  onAnalyzeReceipt?: (file: File) => Promise<ReceiptAnalysis>
 }
 
 type SplitMode = '$' | '%'
@@ -40,7 +43,10 @@ export function ExpenseForm({
   onCancel,
   submitLabel,
   idPrefix = '',
+  canScanReceipt = false,
+  onAnalyzeReceipt,
 }: ExpenseFormProps) {
+  const receiptInputRef = useRef<HTMLInputElement | null>(null)
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
   const [date, setDate] = useState(initialValues?.date ?? new Date().toISOString().split('T')[0])
@@ -48,6 +54,9 @@ export function ExpenseForm({
   const [paidBy, setPaidBy] = useState(initialValues?.paidBy ?? '')
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(initialValues?.participants ?? [])
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [scanningReceipt, setScanningReceipt] = useState(false)
+  const [scanMessage, setScanMessage] = useState<string | null>(null)
+  const [scanError, setScanError] = useState<string | null>(null)
 
   // Advanced split state
   const hasInitialSplits = !!(initialValues?.splits && Object.keys(initialValues.splits).length > 0)
@@ -65,6 +74,55 @@ export function ExpenseForm({
 
   const prefix = idPrefix ? `${idPrefix}-` : ''
   const totalAmount = parseFloat(amount) || 0
+
+  const handleReceiptFile = async (file: File) => {
+    if (!onAnalyzeReceipt) return
+    const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!acceptedTypes.includes(file.type)) {
+      setScanError('Please choose a JPEG, PNG, or WebP image.')
+      return
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setScanError('Receipt image is too large (max 4 MB).')
+      return
+    }
+
+    setScanningReceipt(true)
+    setScanError(null)
+    setScanMessage(null)
+    try {
+      const result = await onAnalyzeReceipt(file)
+      if (result.merchantName) {
+        setPlace(result.merchantName)
+        setDescription(result.merchantName)
+      }
+      if (result.transactionDate) setDate(result.transactionDate)
+      if (result.total !== null) setAmount(result.total.toFixed(2))
+
+      const populated = [
+        result.merchantName,
+        result.transactionDate,
+        result.total
+      ].filter(value => value !== null).length
+      if (populated === 0) {
+        setScanError('No expense details were found. Try a clearer photo or enter them manually.')
+        return
+      }
+
+      const lowConfidence = Object.values(result.confidence)
+        .some(value => value !== null && value < 0.8)
+      const currencyNote = result.currency && result.currency !== 'USD'
+        ? ` The receipt currency is ${result.currency}; SplitMe currently displays amounts with $.`
+        : ''
+      setScanMessage(
+        `${lowConfidence ? 'Some scanned fields may be uncertain. ' : ''}Review the details before adding the expense.${currencyNote}`
+      )
+    } catch (error: any) {
+      setScanError(error?.message || 'Failed to scan receipt')
+    } finally {
+      setScanningReceipt(false)
+    }
+  }
 
   const participantMap = useMemo(
     () => new Map(participants.map(p => [p.id, p])),
@@ -258,6 +316,40 @@ export function ExpenseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {onAnalyzeReceipt && (
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+          <input
+            ref={receiptInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              if (file) void handleReceiptFile(file)
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2"
+            disabled={!canScanReceipt || scanningReceipt}
+            onClick={() => receiptInputRef.current?.click()}
+          >
+            {scanningReceipt
+              ? <CircleNotch className="animate-spin" size={18} />
+              : <Camera size={18} />}
+            {scanningReceipt ? 'Scanning receipt...' : 'Scan receipt'}
+          </Button>
+          {!canScanReceipt && (
+            <p className="text-sm text-muted-foreground">Sign in to scan a receipt.</p>
+          )}
+          {scanMessage && <p className="text-sm text-muted-foreground">{scanMessage}</p>}
+          {scanError && <p className="text-sm text-destructive">{scanError}</p>}
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor={`${prefix}description`}>Description *</Label>
         <Input
